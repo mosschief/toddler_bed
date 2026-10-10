@@ -46,6 +46,12 @@ def part_drawings(v, path):
         s = part.shape
         w, h = part.size
         ax.add_patch(PathPatch(_path(s), fc=part.color, ec="#5a4a32", lw=0.8))
+        for g, depth, label in part.pockets:
+            ax.add_patch(PathPatch(_path(g), fc="#b89b6a", ec="#5a4a32", lw=0.5, ls="--"))
+        if part.pockets:
+            kinds = sorted({(label, d) for _, d, label in part.pockets})
+            ax.text(w / 2, h + max(w, h) * 0.04, "back face, dashed: " +
+                    ", ".join(f"{lbl}s {fmt(d)} deep" for lbl, d in kinds), ha="center", fontsize=7, color="#555")
         _dim(ax, (0, 0), (w, 0), fmt(w), -max(w, h) * 0.07)
         _dim(ax, (w, 0), (w, h), fmt(h), -max(w, h) * 0.07)
         # hole/slot sizes, one representative of each size
@@ -235,29 +241,36 @@ def _render_parts(v, parts, path, title):
 
 # ---------------------------------------------------------------------------
 ASSEMBLY = """
-1. Cut all parts (sheets/panel_*.dxf). Profile CUT_INSIDE before CUT_OUTSIDE, use tabs/onion skin
-   on the small parts, and dry-fit the puzzle joint on scrap first; adjust knob_clearance if needed.
+1. Cut all parts (sheets/panel_*.dxf). The two front-panel pieces are mirrored in the files: cut them
+   BACK FACE UP so the POCKET layers (box-side grooves 3/8" deep, insert holes 1/2" deep) land on the
+   back. Profile CUT_INSIDE before CUT_OUTSIDE, use tabs/onion skin on small parts, and dry-fit the
+   puzzle joint and one groove on scrap first; adjust knob_clearance / tab_clearance if needed.
 2. Ease every exposed edge with a 1/4" roundover (rail top, slots, exit opening, lid edges and the
-   hand hole). Leave the joinery edges and the faces that meet the wall square.
-3. Boxes: glue the back and floor tabs into one side, add the second side, clamp square. Tabs are
+   hand cut-outs). Leave joinery edges and faces that meet the wall square.
+3. Drill 2 pocket holes in the inside face of each corner block. Glue + pocket-screw each block to
+   the inside face of its box side, flush with the side's front shoulder (3/8" back from the front
+   edge, so the block sits tight against the panel when the side is in its groove).
+4. Boxes: glue the back and floor tabs into one side, add the second side, clamp square. Tabs are
    flush with the outside faces. Pre-drill and screw (1-1/4") through the side into each tab.
-4. Set both boxes in the nook, tight to the side walls. Shim level, then screw through each box back
-   into a stud (2-1/2" screws, 2 per box). The 3/4" behind the back lets you scribe the sides to the wall.
-5. Glue the two guard-panel halves together on a flat surface (puzzle joint), let it cure.
-6. Fix the guard panel to the front edges of the box sides with glue + 1-1/4" pocket screws (3 per
-   side). Drill the pocket holes in the inside faces of the sides before step 3, and drive them with a
-   long or right-angle driver, so no screws show on the front.
-7. Hang each lid with a piano hinge along its long wall-side edge (on the top outside edge of the
+5. Glue the two front-panel halves together on a flat surface (puzzle joint), let it cure. Install
+   the 8 threaded inserts in the insert holes on the back.
+6. Set both boxes in the nook, tight to the side walls. Shim level, then screw through each box back
+   into a stud (2-1/2" screws, 2 per box). The 3/4" behind the back lets you scribe the sides.
+7. Lift the front panel on: each box side drops into its groove (open at the bottom, dog-boned at
+   the top). Reach in through each lid and bolt the corner blocks to the inserts (1/4-20 x 1" bolts
+   with washers). No glue here, so the front panel can come off later.
+8. Hang each lid with a piano hinge along its long wall-side edge (on the top outside edge of the
    wall-side panel), so it opens toward the mattress and stands up against the wall. Fit a
-   soft-close lid stay so a lid can't drop on fingers. Lift it at the hand cut-out in the
-   mattress-side panel.
-8. Finish (water-based poly or hardwax oil rated toy-safe), let it cure fully, then drop in the mattress.
+   soft-close lid stay so a lid can't drop on fingers. Lift it at the hand cut-out.
+9. Finish (water-based poly or hardwax oil rated toy-safe), let it cure fully, then add the mattress.
 """.strip()
 
 HARDWARE = """
 - Wood glue (PVA)
 - 1-1/4" wood screws x 16 (box joinery)
-- 1-1/4" pocket-hole screws x 12 (guard panel to boxes)
+- 1-1/4" pocket-hole screws x 8 (corner blocks to box sides)
+- 1/4-20 threaded inserts for wood x 8, no longer than 3/8" (front panel)
+- 1/4-20 x 1" bolts + washers x 8 (corner blocks to front panel)
 - 2-1/2" screws x 4 into studs (box backs)
 - Piano hinge 1-1/2" open width, 2 x 24" lengths (1 per lid)
 - Soft-close lid stays x 2 (light-duty toy-box type)

@@ -44,6 +44,13 @@ class Params:
     hand_notch: tuple = (4.0, 1.5)    # hand cut-out in the mattress-side panel (width, depth)
     lid_corner_radius: float = 0.0    # 0 = square corners to match the boxes
 
+    # --- Front panel to box joinery (removable) ---------------------------
+    groove_depth: float = 0.375       # grooves in the back of the front panel for the box sides
+    cleat_width: float = 1.5          # corner blocks bolted to the front panel
+    bolt_hole: float = 0.28           # clearance for 1/4-20 bolts through the corner blocks
+    insert_hole: float = 0.375        # pilot for 1/4-20 threaded inserts; size to your inserts
+    insert_depth: float = 0.5         # leaves 1/4" of face over the insert
+
     # Variant 1 (side exit, like the reference photo): exit start from head wall
     side_exit_start: float = 38.0
 

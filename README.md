@@ -38,6 +38,11 @@ Each variant folder has:
   (5 3/4" wide each with the defaults; 4 1/4" inside). They are joined with
   through tab-and-slot joints (dog-boned slots), have a floor raised 1" and a
   back set 3/4" in from the wall for scribing.
+- The front panel is removable. Each box side runs 3/8" into a groove
+  pocketed into the back of the panel (open at the bottom, dog-boned at the
+  top), and corner blocks inside the boxes bolt into threaded inserts in
+  the panel back, so no hardware shows on the front. The panel pieces are
+  mirrored in the DXFs: cut them back face up so the pockets land on the back.
 - Each lid is one piece, piano-hinged along its long wall-side edge, and
   opens toward the mattress. The big mattress-side panel of each box has
   a 4" wide hand cut-out in the middle of its top edge for lifting the lid.
@@ -58,6 +63,7 @@ python3 generate.py --full all               # STEP + PDF for every variant
 
 Every dimension lives in [`bedgen/params.py`](bedgen/params.py). DXFs are in
 inches; outlines are on layer `CUT_OUTSIDE`, holes/slots on `CUT_INSIDE`,
+pockets on `POCKET_<depth>` (e.g. `POCKET_0.375`),
 labels on `LABEL` (don't cut). Geometry is finished size, so let CAM apply
 the tool offset. Inside corners are rounded for a 1/4" bit.
 

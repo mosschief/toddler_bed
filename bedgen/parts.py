@@ -29,6 +29,9 @@ class Part:
     note: str = ""
     color: str = "#d9c3a0"
     material: str = "plywood"   # "plywood" parts get cut; others are render-only
+    # pockets cut into the w=0 face: list of (polygon, depth, label). Parts with
+    # pockets are exported mirrored so they cut with that face up.
+    pockets: list = field(default_factory=list)
 
     @property
     def qty(self):

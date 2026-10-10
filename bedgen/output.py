@@ -41,30 +41,55 @@ def _new_doc():
     return doc
 
 
-def _add_shape(msp, shape):
+def _add_shape(msp, shape, pockets=()):
     shape = orient(shape)
     msp.add_lwpolyline(list(shape.exterior.coords)[:-1], close=True,
                        dxfattribs={"layer": "CUT_OUTSIDE"})
     for ring in shape.interiors:
         msp.add_lwpolyline(list(ring.coords)[:-1], close=True, dxfattribs={"layer": "CUT_INSIDE"})
+    for poly, depth in pockets:
+        layer = f"POCKET_{depth:.3f}"
+        if layer not in msp.doc.layers:
+            msp.doc.layers.add(layer, color=4)
+        for g in getattr(poly, "geoms", [poly]):
+            msp.add_lwpolyline(list(orient(g).exterior.coords)[:-1], close=True, dxfattribs={"layer": layer})
+
+
+def cam_geometry(part):
+    """Outline and pockets as they should be cut. A part with pockets is
+    mirrored so the pocketed face (its back) is the one facing up."""
+    shape, pockets = part.shape, [(g, d) for g, d, _ in part.pockets]
+    if pockets:
+        x0, _, x1, _ = shape.bounds
+        m = lambda g: affinity.scale(g, -1, 1, origin=((x0 + x1) / 2, 0))  # noqa: E731
+        shape, pockets = m(shape), [(m(g), d) for g, d in pockets]
+    return shape, pockets
 
 
 def write_part_dxf(part, path):
     doc = _new_doc()
     msp = doc.modelspace()
-    _add_shape(msp, part.shape)
+    shape, pockets = cam_geometry(part)
+    _add_shape(msp, shape, pockets)
+    if pockets:
+        msp.add_text("BACK FACE UP (pockets are on the back)", height=0.4,
+                     dxfattribs={"layer": "LABEL"}).set_placement((0, -1.8))
     w, h = part.size
     msp.add_text(f"{part.name} x{part.qty}  ({w:.3f} x {h:.3f} in)", height=0.4,
                  dxfattribs={"layer": "LABEL"}).set_placement((0, -1.0))
     doc.saveas(path)
 
 
-def placed_shape(pl):
-    shape = pl.item.shape
+def placed_shape(pl, with_pockets=False):
+    shape, pockets = cam_geometry(pl.item)
     if pl.rotated:
         shape = affinity.rotate(shape, 90, origin=(0, 0))
+        pockets = [(affinity.rotate(g, 90, origin=(0, 0)), d) for g, d in pockets]
     x0, y0, _, _ = shape.bounds
-    return affinity.translate(shape, pl.x - x0, pl.y - y0)
+    t = lambda g: affinity.translate(g, pl.x - x0, pl.y - y0)  # noqa: E731
+    if with_pockets:
+        return t(shape), [(t(g), d) for g, d in pockets]
+    return t(shape)
 
 
 def write_sheet_dxf(sheet, idx, p, path):
@@ -73,8 +98,8 @@ def write_sheet_dxf(sheet, idx, p, path):
     msp.add_lwpolyline([(0, 0), (p.cnc_bed, 0), (p.cnc_bed, p.cnc_bed), (0, p.cnc_bed)], close=True,
                        dxfattribs={"layer": "SHEET"})
     for pl in sheet:
-        s = placed_shape(pl)
-        _add_shape(msp, s)
+        s, pockets = placed_shape(pl, with_pockets=True)
+        _add_shape(msp, s, pockets)
         c = s.representative_point()
         msp.add_text(pl.item.name, height=0.5, dxfattribs={"layer": "LABEL"}).set_placement((c.x, c.y))
     doc.saveas(path)
@@ -107,8 +132,10 @@ def draw_sheets(v, sheets, path):
         ax.add_patch(MplPolygon([(0, 0), (p.cnc_bed, 0), (p.cnc_bed, p.cnc_bed), (0, p.cnc_bed)],
                                 closed=True, fc="#f3ece0", ec="#888", lw=1))
         for pl in sheets[k]:
-            s = placed_shape(pl)
+            s, pockets = placed_shape(pl, with_pockets=True)
             ax.add_patch(PathPatch(_path(s), fc=pl.item.color, ec="#5a4a32", lw=0.6))
+            for g, _ in pockets:
+                ax.add_patch(PathPatch(_path(g), fc="#b89b6a", ec="#5a4a32", lw=0.4, ls="--"))
             c = s.representative_point()
             ax.text(c.x, c.y, pl.item.name, ha="center", va="center", fontsize=6.5, color="#333")
         ax.set_xlim(-1, p.cnc_bed + 1)

@@ -1,6 +1,7 @@
 """STEP export of the assembled bed (one named solid per part copy)."""
 import numpy as np
 from OCP.BRepBuilderAPI import BRepBuilderAPI_MakeFace, BRepBuilderAPI_MakePolygon
+from OCP.BRepAlgoAPI import BRepAlgoAPI_Cut
 from OCP.BRepPrimAPI import BRepPrimAPI_MakePrism
 from OCP.gp import gp_Pnt, gp_Vec
 from OCP.IFSelect import IFSelect_RetDone
@@ -47,6 +48,10 @@ def write_step(parts, thickness, path, inches=True):
             scaled = type(pl)(tuple(np.asarray(pl.origin) * scale), pl.u, pl.v, pl.n)
             shp = affinity.scale(part.shape.simplify(0.01), scale, scale, origin=(0, 0))
             solid = _solid(shp, scaled, t * scale)
+            for g, depth, _ in part.pockets:
+                g = affinity.scale(g.simplify(0.005), scale, scale, origin=(0, 0))
+                for piece in getattr(g, "geoms", [g]):
+                    solid = BRepAlgoAPI_Cut(solid, _solid(piece, scaled, depth * scale)).Shape()
             counts[part.name] = counts.get(part.name, 0) + 1
             label = tool.AddShape(solid, False)
             name = part.name if part.qty == 1 else f"{part.name} {counts[part.name]}"
