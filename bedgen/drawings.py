@@ -153,7 +153,7 @@ def exploded_box(v, path):
     p = v.params
     bw = p.box_width
     offsets = {"Box side (wall)": (-5, 0, 0), "Box side (mattress)": (5, 0, 0), "Box back": (0, 6, 0),
-               "Box floor": (0, -3, 0), "Box lid": (0, 0, 6)}
+               "Box front": (0, -8, 0), "Box floor": (0, -3, 0), "Box lid": (0, 0, 6)}
     parts = []
     for part in v.cut_parts:
         if part.name not in offsets:
@@ -247,17 +247,18 @@ ASSEMBLY = """
    puzzle joint and one groove on scrap first; adjust knob_clearance / tab_clearance if needed.
 2. Ease every exposed edge with a 1/4" roundover (rail top, slots, exit opening, lid edges and the
    hand cut-outs). Leave joinery edges and faces that meet the wall square.
-3. Drill 2 pocket holes in the inside face of each corner block. Glue + pocket-screw each block to
-   the inside face of its box side, flush with the side's front shoulder (3/8" back from the front
-   edge, so the block sits tight against the panel when the side is in its groove).
-4. Boxes: glue the back and floor tabs into one side, add the second side, clamp square. Tabs are
-   flush with the outside faces. Pre-drill and screw (1-1/4") through the side into each tab.
+3. Boxes: glue the front, back and floor tabs into one side, add the second side, clamp square.
+   Tabs are flush with the outside faces. Pre-drill and screw (1-1/4") through the side into each
+   tab. The front wall's slots sit just behind the 3/8" of side that goes into the panel groove,
+   so handle the sides gently until the box is glued up.
+4. Check that the front wall's face is flush with the sides' front shoulders (3/8" back from their
+   front edges), so it sits tight against the panel when the sides are in their grooves.
 5. Glue the two front-panel halves together on a flat surface (puzzle joint), let it cure. Install
    the 8 threaded inserts in the insert holes on the back.
 6. Set both boxes in the nook, tight to the side walls. Shim level, then screw through each box back
    into a stud (2-1/2" screws, 2 per box). The 3/4" behind the back lets you scribe the sides.
 7. Lift the front panel on: each box side drops into its groove (open at the bottom, dog-boned at
-   the top). Reach in through each lid and bolt the corner blocks to the inserts (1/4-20 x 1" bolts
+   the top). Reach in through each lid and bolt the box fronts to the inserts (1/4-20 x 1" bolts
    with washers). No glue here, so the front panel can come off later.
 8. Hang each lid with a piano hinge along its long wall-side edge (on the top outside edge of the
    wall-side panel), so it opens toward the mattress and stands up against the wall. Fit a
@@ -267,10 +268,9 @@ ASSEMBLY = """
 
 HARDWARE = """
 - Wood glue (PVA)
-- 1-1/4" wood screws x 16 (box joinery)
-- 1-1/4" pocket-hole screws x 8 (corner blocks to box sides)
+- 1-1/4" wood screws x 24 (box joinery)
 - 1/4-20 threaded inserts for wood x 8, no longer than 3/8" (front panel)
-- 1/4-20 x 1" bolts + washers x 8 (corner blocks to front panel)
+- 1/4-20 x 1" bolts + washers x 8 (box fronts to front panel)
 - 2-1/2" screws x 4 into studs (box backs)
 - Piano hinge 1-1/2" open width, 2 x 24" lengths (1 per lid)
 - Soft-close lid stays x 2 (light-duty toy-box type)

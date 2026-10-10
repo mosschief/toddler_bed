@@ -91,8 +91,9 @@ def panel_halves(p: Params, panel, joint_x, y0, y1):
 def storage_boxes(p: Params, box_top, ledger_z=None, open_lid_deg=0.0):
     """Lidded boxes at each end. The guard panel is their front.
 
-    Joinery: the back and the raised floor have tabs that pass through
-    dog-boned slots in both sides. The one-piece lid is piano-hinged along
+    Joinery: the front wall, the back and the raised floor have tabs that pass
+    through dog-boned slots in both sides. The front wall sits against the back
+    of the guard panel and is bolted to it. The one-piece lid is piano-hinged along
     its long wall-side edge, so it opens toward the mattress. The mattress-side panel has a
     hand cut-out in its top edge for lifting the lid.
     """
@@ -100,25 +101,25 @@ def storage_boxes(p: Params, box_top, ledger_z=None, open_lid_deg=0.0):
     side_h = box_top - T
     inner_w = bw - 2 * T
     back_u0 = D - p.back_inset - T        # back panel front face, side-local depth
-    floor_d = back_u0                      # floor runs from the front panel to the back
+    floor_d = back_u0 - T                  # floor runs from the front wall to the back
     c = p.tab_clearance
     parts = []
 
-    # --- sides: slots for the back and floor tabs
+    # --- sides: slots for the front wall, back and floor tabs
     side_shape = rect(0, 0, D, side_h)
     back_tabs = tab_centres(side_h - p.bottom_lift, p.tab_length)
     back_tabs = [p.bottom_lift + t for t in back_tabs]
-    floor_tabs = tab_centres(floor_d, p.tab_length + 1)
-    slots = [slot_with_dogbones(back_u0 - c, z - p.tab_length / 2 - c,
-                                back_u0 + T + c, z + p.tab_length / 2 + c, p.bit_diameter)
-             for z in back_tabs]
-    slots += [slot_with_dogbones(u - (p.tab_length + 1) / 2 - c, p.bottom_lift - c,
-                                 u + (p.tab_length + 1) / 2 + c, p.bottom_lift + T + c, p.bit_diameter)
+    floor_tabs = tab_centres(floor_d, p.tab_length + 1)  # floor-local; the floor starts at u = T
+    slots = [slot_with_dogbones(u0 - c, z - p.tab_length / 2 - c,
+                                u0 + T + c, z + p.tab_length / 2 + c, p.bit_diameter)
+             for u0 in (0, back_u0) for z in back_tabs]
+    slots += [slot_with_dogbones(T + u - (p.tab_length + 1) / 2 - c, p.bottom_lift - c,
+                                 T + u + (p.tab_length + 1) / 2 + c, p.bottom_lift + T + c, p.bit_diameter)
               for u in floor_tabs]
-    side_shape = side_shape.difference(unary_union(slots))
     # sides run gd further forward, into the grooves in the back of the front panel
     gd = p.groove_depth
     side_shape = unary_union([affinity.translate(side_shape, gd, 0), rect(0, 0, gd + 0.01, side_h)])
+    side_shape = side_shape.difference(affinity.translate(unary_union(slots), gd, 0))
     side = Part("Box side (wall)", side_shape, color=WOOD_DARK, note="against the nook wall, 1 per box")
 
     # mattress-side panel: centred hand cut-out in the top edge to lift the lid
@@ -131,12 +132,22 @@ def storage_boxes(p: Params, box_top, ledger_z=None, open_lid_deg=0.0):
                               round_convex(face_shape, 0.375).intersection(zone)])
     face = Part("Box side (mattress)", face_shape, note="faces the mattress; hand cut-out to open the lid")
 
-    # --- back with tabs on both edges
+    # --- back and front wall, tabs on both edges
     back_shape = unary_union([rect(0, 0, inner_w, side_h)] +
                              [rect(-T, z - p.tab_length / 2, 0, z + p.tab_length / 2) for z in back_tabs] +
                              [rect(inner_w, z - p.tab_length / 2, inner_w + T, z + p.tab_length / 2)
                               for z in back_tabs])
     back = Part("Box back", back_shape, color=WOOD_DARK, note="screw through into wall studs")
+
+    # front wall: same outline as the back, plus bolt holes into the guard panel inserts
+    bz0, bz1 = p.bottom_lift + T, side_h
+    bolt_xs = [p.bolt_inset, inner_w - p.bolt_inset]
+    bolt_zs = [bz0 + (bz1 - bz0) * f for f in (0.25, 0.75)]
+    front_shape = back_shape.difference(unary_union(
+        [Point(x, z).buffer(p.bolt_hole / 2, quad_segs=12) for x in bolt_xs for z in bolt_zs]))
+    front = Part("Box front", front_shape, color=WOOD_DARK,
+                 note="against the back of the front panel; 4 bolts into it")
+    front.bolts = []  # world (x, z) of each bolt, for the inserts in the front panel
 
     # --- raised floor with tabs on both long edges
     tl = p.tab_length + 1
@@ -160,7 +171,9 @@ def storage_boxes(p: Params, box_top, ledger_z=None, open_lid_deg=0.0):
         side.placements.append(place((wall_x, T - gd, 0), Y, Z, X))
         face.placements.append(place((face_x, T - gd, 0), Y, Z, X))
         back.placements.append(place((x0 + T, T + back_u0 + T, 0), X, Z, NY))
-        bottom.placements.append(place((x0 + T, T, p.bottom_lift), X, Y, Z))
+        front.placements.append(place((x0 + T, 2 * T, 0), X, Z, NY))
+        front.bolts += [(x0 + T + x, z) for x in bolt_xs for z in bolt_zs]
+        bottom.placements.append(place((x0 + T, 2 * T, p.bottom_lift), X, Y, Z))
         wall_edge = 0 if sgn > 0 else L
         if open_lid_deg and sgn > 0:
             # pivot on the top outer edge; the lid stands up against the wall
@@ -170,23 +183,9 @@ def storage_boxes(p: Params, box_top, ledger_z=None, open_lid_deg=0.0):
             lid.placements.append(place(origin, tuple(u), Y, tuple(nrm)))
         else:
             lid.placements.append(place((wall_edge, T + g, side_h), (sgn, 0, 0), Y, Z))
-    for part in (back, bottom):
+    for part in (back, front, bottom):
         _shift_to_origin(part)
-
-    # --- corner blocks: glued + pocket-screwed to each side, bolted to the front panel
-    cw = p.cleat_width
-    cz0, cz1 = p.bottom_lift + T, side_h - 0.5
-    bolt_zs = [cz0 + (cz1 - cz0) * f for f in (0.25, 0.75)]
-    cleat_shape = rect(0, 0, cw, cz1 - cz0).difference(unary_union(
-        [Point(cw / 2, z - cz0).buffer(p.bolt_hole / 2, quad_segs=12) for z in bolt_zs]))
-    cleat = Part("Corner block", cleat_shape, color=WOOD_DARK,
-                 note="glue + 2 pocket screws to the side; 2 bolts into the front panel")
-    cleat.bolts = []  # world (x, z) of each bolt, for the inserts in the front panel
-    for x0 in (0, L - bw):
-        for side_inner in (x0 + T, x0 + bw - T - cw):
-            cleat.placements.append(place((side_inner, 2 * T, cz0), X, Z, NY))
-            cleat.bolts += [(side_inner + cw / 2, z) for z in bolt_zs]
-    parts += [side, face, back, bottom, lid, cleat]
+    parts += [side, face, back, front, bottom, lid]
 
     if ledger_z is not None:
         ledger = Part("Deck ledger (box side)", rect(0, 0, D, 1.5), color=WOOD_DARK,
@@ -199,13 +198,13 @@ def storage_boxes(p: Params, box_top, ledger_z=None, open_lid_deg=0.0):
 
 def add_panel_joinery(p: Params, panels, box_parts, box_top):
     """Grooves (dog-boned, open at the bottom) for every box side, and insert
-    holes for the corner-block bolts, pocketed into the back of the front panel."""
+    holes for the box-front bolts, pocketed into the back of the front panel."""
     T, bw, L, c = p.T, p.box_width, p.nook_width, p.tab_clearance
     side_h = box_top - T
     side_xs = [0, bw - T, L - bw, L - T]
     grooves = [slot_with_dogbones(x - c, -2, x + T + c, side_h + c, p.bit_diameter) for x in side_xs]
-    cleat = next(q for q in box_parts if q.name == "Corner block")
-    holes = [Point(x, z).buffer(p.insert_hole / 2, quad_segs=12) for x, z in cleat.bolts]
+    front = next(q for q in box_parts if q.name == "Box front")
+    holes = [Point(x, z).buffer(p.insert_hole / 2, quad_segs=12) for x, z in front.bolts]
     for panel in panels:
         ox = panel.placements[0].origin[0]
         oz = panel.placements[0].origin[2]

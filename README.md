@@ -36,11 +36,11 @@ Each variant folder has:
   half is 45 1/4", which still fits but leaves little room on the bed.
 - Head and foot boxes fill the nook on either side of the mattress
   (5 3/4" wide each with the defaults; 4 1/4" inside). They are joined with
-  through tab-and-slot joints (dog-boned slots), have a floor raised 1" and a
-  back set 3/4" in from the wall for scribing.
+  through tab-and-slot joints (dog-boned slots), have a front wall, a floor
+  raised 1" and a back set 3/4" in from the wall for scribing.
 - The front panel is removable. Each box side runs 3/8" into a groove
   pocketed into the back of the panel (open at the bottom, dog-boned at the
-  top), and corner blocks inside the boxes bolt into threaded inserts in
+  top), and each box's front wall bolts into threaded inserts in
   the panel back, so no hardware shows on the front. The panel pieces are
   mirrored in the DXFs: cut them back face up so the pockets land on the back.
 - Each lid is one piece, piano-hinged along its long wall-side edge, and
