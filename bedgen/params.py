@@ -42,7 +42,7 @@ class Params:
     tab_clearance: float = 0.01       # per side, slot vs tab
     lid_gap: float = 0.0625           # gap around the opening lid
     hand_notch: tuple = (4.0, 1.5)    # hand cut-out in the mattress-side panel (width, depth)
-    lid_corner_radius: float = 0.75
+    lid_corner_radius: float = 0.0    # 0 = square corners to match the boxes
 
     # Variant 1 (side exit, like the reference photo): exit start from head wall
     side_exit_start: float = 38.0

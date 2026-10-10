@@ -143,7 +143,9 @@ def storage_boxes(p: Params, box_top, ledger_z=None, open_lid_deg=0.0):
     g = p.lid_gap
     lid_d = D - 2 * g
     r = min(p.lid_corner_radius, bw / 2 - 0.1)
-    lid_shape = round_convex(rect(-5, 0, bw, lid_d), r).intersection(rect(0, 0, bw, lid_d))
+    lid_shape = rect(0, 0, bw, lid_d)
+    if r > 0:
+        lid_shape = round_convex(rect(-5, 0, bw, lid_d), r).intersection(lid_shape)
     lid = Part("Box lid", lid_shape, color=LID, note="piano hinge along the long wall-side edge")
 
     th = np.radians(open_lid_deg)
