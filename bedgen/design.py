@@ -6,11 +6,13 @@ the rear wall, z is up from the floor.
 """
 from dataclasses import dataclass, field
 
+import numpy as np
 from shapely.ops import unary_union
 
 from .params import Params
 from .parts import (NX, NY, X, Y, Z, Part, h_stadium, place, rect, round_concave,
-                    round_convex, rounded_rect, slots_between, split_with_puzzle)
+                    round_convex, slot_with_dogbones, slots_between, split_with_puzzle,
+                    tab_centres)
 
 WOOD = "#e3cfa8"
 WOOD_DARK = "#cdb48a"
@@ -24,6 +26,7 @@ class Variant:
     summary: str
     params: Params
     parts: list = field(default_factory=list)
+    open_parts: list = None  # same assembly with a lid open, for the preview
     heights: dict = field(default_factory=dict)
 
     @property
@@ -83,26 +86,81 @@ def panel_halves(p: Params, panel, joint_x, y0, y1):
 # ---------------------------------------------------------------------------
 # Head / foot storage boxes
 # ---------------------------------------------------------------------------
-def storage_boxes(p: Params, box_top, ledger_z=None):
-    """Lidded boxes at each end. The guard panel is their front."""
+def storage_boxes(p: Params, box_top, ledger_z=None, open_lid_deg=0.0):
+    """Lidded boxes at each end. The guard panel is their front.
+
+    Joinery: the back and the raised floor have tabs that pass through
+    dog-boned slots in both sides. The lid is in two pieces: a fixed hinge
+    strip screwed to the side tops at the back, and the opening lid hinged
+    to it, so the lid swings up clear of the wall.
+    """
     T, D, bw, L = p.T, p.depth, p.box_width, p.nook_width
     side_h = box_top - T
     inner_w = bw - 2 * T
+    back_u0 = D - p.back_inset - T        # back panel front face, side-local depth
+    floor_d = back_u0                      # floor runs from the front panel to the back
+    c = p.tab_clearance
     parts = []
 
-    side = Part("Box side", rect(0, 0, D, side_h), note="outer + inner side of each box")
-    back = Part("Box back", rect(0, 0, inner_w, side_h), color=WOOD_DARK)
-    bottom = Part("Box bottom", rect(0, 0, inner_w, D - T), color=WOOD_DARK)
-    lid_d = D - 1 / 16
-    lid_shape = rect(0, 0, bw, lid_d).difference(_finger_hole(bw))
-    lid = Part("Box lid", lid_shape, color=LID, note="piano hinge at the back edge")
+    # --- sides: slots for the back and floor tabs
+    side_shape = rect(0, 0, D, side_h)
+    back_tabs = tab_centres(side_h - p.bottom_lift, p.tab_length)
+    back_tabs = [p.bottom_lift + t for t in back_tabs]
+    floor_tabs = tab_centres(floor_d, p.tab_length + 1)
+    slots = [slot_with_dogbones(back_u0 - c, z - p.tab_length / 2 - c,
+                                back_u0 + T + c, z + p.tab_length / 2 + c, p.bit_diameter)
+             for z in back_tabs]
+    slots += [slot_with_dogbones(u - (p.tab_length + 1) / 2 - c, p.bottom_lift - c,
+                                 u + (p.tab_length + 1) / 2 + c, p.bottom_lift + T + c, p.bit_diameter)
+              for u in floor_tabs]
+    side_shape = side_shape.difference(unary_union(slots))
+    # small finger relief at the top back corner is not needed; keep the side plain
+    side = Part("Box side", side_shape, note="2 per box; slots face the same way on all four")
 
+    # --- back with tabs on both edges
+    back_shape = unary_union([rect(0, 0, inner_w, side_h)] +
+                             [rect(-T, z - p.tab_length / 2, 0, z + p.tab_length / 2) for z in back_tabs] +
+                             [rect(inner_w, z - p.tab_length / 2, inner_w + T, z + p.tab_length / 2)
+                              for z in back_tabs])
+    back = Part("Box back", back_shape, color=WOOD_DARK, note="screw through into wall studs")
+
+    # --- raised floor with tabs on both long edges
+    tl = p.tab_length + 1
+    floor_shape = unary_union([rect(0, 0, inner_w, floor_d)] +
+                              [rect(-T, u - tl / 2, 0, u + tl / 2) for u in floor_tabs] +
+                              [rect(inner_w, u - tl / 2, inner_w + T, u + tl / 2) for u in floor_tabs])
+    bottom = Part("Box floor", floor_shape, color=WOOD_DARK, note=f"sits {fmt_in(p.bottom_lift)} off the floor")
+
+    # --- lid: fixed hinge strip + opening lid with a hand cut-out
+    hs = p.hinge_strip
+    strip = Part("Lid hinge strip", rect(0, 0, bw, hs), color=LID,
+                 note="glue + screw to the side tops")
+    lid_d = D - hs - 2 * p.lid_gap
+    lid_shape = rect(0, 0, bw, lid_d + 5)
+    lid_shape = round_convex(lid_shape, min(p.lid_corner_radius, bw / 2 - 0.1)).intersection(
+        rect(0, 0, bw, lid_d))
+    hl, hw = p.hand_hole
+    hl = min(hl, bw - 2.0)
+    lid_shape = lid_shape.difference(h_stadium(bw / 2, lid_d / 2, hl, hw))
+    lid = Part("Box lid", lid_shape, color=LID, note="hand hole centred; 2 hinges to the strip")
+
+    th = np.radians(open_lid_deg)
     for x0, side_xs in ((0, (0, bw - T)), (L - bw, (L - bw, L - T))):
         side.placements += [place((sx, T, 0), Y, Z, X) for sx in side_xs]
-        back.placements.append(place((x0 + T, T + D, 0), X, Z, NY))
-        bottom.placements.append(place((x0 + T, T, 0), X, Y, Z))
-        lid.placements.append(place((x0, T + 1 / 16, side_h), X, Y, Z))
-    parts += [side, back, bottom, lid]
+        back.placements.append(place((x0 + T, T + back_u0 + T, 0), X, Z, NY))
+        bottom.placements.append(place((x0 + T, T, p.bottom_lift), X, Y, Z))
+        strip.placements.append(place((x0, T + D - hs, side_h), X, Y, Z))
+        hinge = np.array([x0, T + D - hs - p.lid_gap, side_h + T])
+        if open_lid_deg and x0 == 0:
+            d = np.array([0, -np.cos(th), np.sin(th)])     # hinge -> front edge
+            nrm = np.array([0, np.sin(th), np.cos(th)])
+            origin = hinge + lid_d * d - T * nrm
+            lid.placements.append(place(origin, X, tuple(-d), tuple(nrm)))
+        else:
+            lid.placements.append(place((x0, T + p.lid_gap, side_h), X, Y, Z))
+    for part in (back, bottom):
+        _shift_to_origin(part)
+    parts += [side, back, bottom, strip, lid]
 
     if ledger_z is not None:
         ledger = Part("Deck ledger (box side)", rect(0, 0, D, 1.5), color=WOOD_DARK,
@@ -113,9 +171,8 @@ def storage_boxes(p: Params, box_top, ledger_z=None):
     return parts
 
 
-def _finger_hole(bw):
-    length = min(3.0, bw - 2.0)
-    return h_stadium(bw / 2, 1.75, length, 1.0) if length > 1.0 else rect(0, 0, 0, 0)
+def fmt_in(x):
+    return f'{x:g}"'
 
 
 # ---------------------------------------------------------------------------
@@ -151,6 +208,7 @@ def _floor_variant(p: Params, key, title, summary, exit_x0, joint_x):
 
     v = Variant(key, title, summary, p)
     v.parts = [pa, pb] + storage_boxes(p, box_top) + [mattress(p, 0)]
+    v.open_parts = [pa, pb] + storage_boxes(p, box_top, open_lid_deg=85) + [mattress(p, 0)]
     v.heights = dict(mattress_top=mat_top, rail_top=rail_top, sill_top=sill_top,
                      box_top=box_top, exit=(ex0, ex1), joint_x=joint_x)
     return v

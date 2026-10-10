@@ -6,10 +6,11 @@ Mattress on a plywood deck over two small IKEA HEMNES underbed boxes, with plywo
 |---|---:|---|---|
 | Front panel A | 1 | 33 1/4" x 22 5/8" | knob half |
 | Front panel B | 1 | 32" x 22 5/8" | socket half |
-| Box side | 4 | 27 3/4" x 20 7/8" | outer + inner side of each box |
-| Box back | 2 | 4 1/4" x 20 7/8" |  |
-| Box bottom | 2 | 4 1/4" x 27" |  |
-| Box lid | 2 | 5 3/4" x 27 11/16" | piano hinge at the back edge |
+| Box side | 4 | 27 3/4" x 20 7/8" | 2 per box; slots face the same way on all four |
+| Box back | 2 | 5 3/4" x 20 7/8" | screw through into wall studs |
+| Box floor | 2 | 5 3/4" x 26 1/4" | sits 1" off the floor |
+| Lid hinge strip | 2 | 5 3/4" x 2" | glue + screw to the side tops |
+| Box lid | 2 | 5 3/4" x 25 5/8" | hand hole centred; 2 hinges to the strip |
 | Deck ledger (box side) | 2 | 27 3/4" x 1 1/2" | screwed to the mattress-side face of each box |
 | Deck | 2 | 26 1/4" x 27 3/4" | mattress platform, two halves |
 | Centre divider | 1 | 28 1/2" x 7 7/8" | front edge flush with the panel face |

@@ -12,6 +12,11 @@ Three variants are generated:
 | [`v2_center_exit`](output/v2_center_exit) | on the floor | centred; two near-equal panel halves | 2 |
 | [`v3_raised_drawers`](output/v3_raised_drawers) | on a deck over 2 small IKEA HEMNES underbed boxes | centred | 5 |
 
+**`v1_side_exit` is the chosen design** and gets the full CAD package:
+
+- `v1_side_exit.step`: 3D assembly (millimetres, one named solid per part) for Fusion 360, Onshape, FreeCAD etc.
+- `drawings.pdf`: 3D view, front view, plan, section through a box, exploded box, dimensioned part drawings, nesting, cut list, hardware and assembly steps
+
 Each variant folder has:
 
 - `preview.png`: 3D view, `front.png`: dimensioned front elevation
@@ -29,8 +34,12 @@ Each variant folder has:
   centred exit the halves are 33" and 32" long; with the side exit the long
   half is 45 1/4", which still fits but leaves little room on the bed.
 - Head and foot boxes fill the nook on either side of the mattress
-  (5 3/4" wide each with the defaults; 4 1/4" inside). Lids are hinged at the
-  back and sit 1" below the rail top.
+  (5 3/4" wide each with the defaults; 4 1/4" inside). They are joined with
+  through tab-and-slot joints (dog-boned slots), have a floor raised 1" and a
+  back set 3/4" in from the wall for scribing.
+- Each lid is a fixed 2" hinge strip plus an opening lid with rounded front
+  corners and a 3 1/2" x 1 1/4" hand hole in the middle. Lids sit 1" below
+  the rail top, tucked behind the guard panel.
 - Raised version: the deck is two halves meeting over a centre divider and
   sitting on ledgers screwed to the boxes and the wall. The IKEA fronts are
   replaced by inset plywood faces with a cut-through finger pull.
@@ -38,10 +47,11 @@ Each variant folder has:
 ## Regenerating
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt   # cadquery-ocp is only needed for the STEP export
 python3 generate.py                          # 3/4" plywood
 python3 generate.py --thickness 0.709        # measured 18 mm sheet
 python3 generate.py --set exit_width=18 --set nook_width=63.75
+python3 generate.py --full all               # STEP + PDF for every variant
 ```
 
 Every dimension lives in [`bedgen/params.py`](bedgen/params.py). DXFs are in

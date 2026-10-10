@@ -161,8 +161,9 @@ def _shade(color, normal, light):
     return tuple(np.clip(rgb * k, 0, 1))
 
 
-def render_iso(v, path, view=(0.62, 1.0, -0.62)):
+def render_iso(v, path, view=(0.62, 1.0, -0.62), parts=None, title=None):
     p = v.params
+    parts = parts or v.parts
     d = np.asarray(view, float)
     d /= np.linalg.norm(d)
     right = np.cross(d, (0, 0, 1))
@@ -180,7 +181,7 @@ def render_iso(v, path, view=(0.62, 1.0, -0.62)):
     faces = [([proj(back)], "#ece7df", "#ece7df"), ([proj(floor)], "#d8cfc2", "#d8cfc2")]
 
     instances = []  # (aabb_min, aabb_max, depth, faces)
-    for part in v.parts:
+    for part in parts:
         thick = getattr(part, "render_thickness", T)
         shape = orient(part.shape)
         rings = [np.asarray(shape.exterior.coords)] + [np.asarray(r.coords) for r in shape.interiors]
@@ -228,7 +229,7 @@ def render_iso(v, path, view=(0.62, 1.0, -0.62)):
         lw = 0.6 if edge != color else 0.4
         ax.add_patch(PathPatch(Path(verts, codes), fc=color, ec=edge, lw=lw, joinstyle="round"))
     ax.autoscale_view()
-    ax.set_title(v.title, fontsize=14)
+    ax.set_title(title or v.title, fontsize=14)
     fig.tight_layout()
     fig.savefig(path, dpi=140)
     plt.close(fig)
@@ -343,7 +344,7 @@ def render_front(v, path):
 
 
 # ---------------------------------------------------------------------------
-def write_variant(v, outdir):
+def write_variant(v, outdir, full=False):
     os.makedirs(os.path.join(outdir, "parts"), exist_ok=True)
     os.makedirs(os.path.join(outdir, "sheets"), exist_ok=True)
     for part in v.cut_parts:
@@ -353,9 +354,14 @@ def write_variant(v, outdir):
     for i, sheet in enumerate(sheets):
         write_sheet_dxf(sheet, i, v.params, os.path.join(outdir, "sheets", f"panel_{i + 1}.dxf"))
     draw_sheets(v, sheets, os.path.join(outdir, "nesting.png"))
-    render_iso(v, os.path.join(outdir, "preview.png"))
+    render_iso(v, os.path.join(outdir, "preview.png"), parts=v.open_parts)
     render_front(v, os.path.join(outdir, "front.png"))
     md = cut_list_md(v, sheets)
     with open(os.path.join(outdir, "cut_list.md"), "w") as f:
         f.write(md)
+    if full:
+        from .drawings import build_package
+        from .step import write_step
+        build_package(v, outdir, md)
+        write_step(v.parts, v.params.T, os.path.join(outdir, f"{v.key}.step"))
     return md

@@ -6,10 +6,11 @@ Mattress on the floor, exit in the middle; the two panel halves are mirror-lengt
 |---|---:|---|---|
 | Front panel A | 1 | 33 1/4" x 14" | knob half |
 | Front panel B | 1 | 32" x 14" | socket half |
-| Box side | 4 | 27 3/4" x 12 1/4" | outer + inner side of each box |
-| Box back | 2 | 4 1/4" x 12 1/4" |  |
-| Box bottom | 2 | 4 1/4" x 27" |  |
-| Box lid | 2 | 5 3/4" x 27 11/16" | piano hinge at the back edge |
+| Box side | 4 | 27 3/4" x 12 1/4" | 2 per box; slots face the same way on all four |
+| Box back | 2 | 5 3/4" x 12 1/4" | screw through into wall studs |
+| Box floor | 2 | 5 3/4" x 26 1/4" | sits 1" off the floor |
+| Lid hinge strip | 2 | 5 3/4" x 2" | glue + screw to the side tops |
+| Box lid | 2 | 5 3/4" x 25 5/8" | hand hole centred; 2 hinges to the strip |
 
 - **Panels:** 2 pieces of 4'x4' (1 x 4'x8' sheet(s) of 3/4" plywood, each cut in half)
 - **Heights from floor:** mattress top 5", rail top 14", box lids 13", exit sill 6"

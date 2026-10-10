@@ -75,13 +75,13 @@ def h_stadium(cx, cy, length, w):
     return LineString([(cx - length / 2 + r, cy), (cx + length / 2 - r, cy)]).buffer(r, quad_segs=RES)
 
 
-def slots_between(a, b, y0, y1, slot_w, slat_w, margin):
+def slots_between(a, b, y0, y1, slot_w, slat_w, margin, min_slots=3):
     """Evenly spaced vertical slots filling the span a..b, `margin` solid at each end."""
     span = b - a - 2 * margin
     if span < slot_w:
         return []
     n = int((span + slat_w) // (slot_w + slat_w))
-    if n < 1:
+    if n < min_slots:
         return []
     used = n * slot_w + (n - 1) * slat_w
     start = a + margin + (span - used) / 2 + slot_w / 2
@@ -119,3 +119,19 @@ def _single(g):
         return g
     parts = sorted(g.geoms, key=lambda q: q.area, reverse=True)
     return parts[0]
+
+
+def slot_with_dogbones(x0, y0, x1, y1, bit_diameter):
+    """Rectangular through-slot with dogbone reliefs so square tabs seat fully."""
+    r = bit_diameter / 2 + 0.01
+    k = r / 2 ** 0.5
+    s = rect(x0, y0, x1, y1)
+    bones = [Point(x0 + k, y0 + k), Point(x1 - k, y0 + k), Point(x0 + k, y1 - k), Point(x1 - k, y1 - k)]
+    return unary_union([s] + [b.buffer(r, quad_segs=RES) for b in bones])
+
+
+def tab_centres(length, tab, n=2):
+    """Centres of n tabs spread along an edge of the given length."""
+    if length < tab * n + 2:
+        n = 1
+    return [length * (i + 0.5) / n for i in range(n)]

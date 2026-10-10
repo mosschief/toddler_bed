@@ -28,12 +28,22 @@ class Params:
     lid_below_rail: float = 1.0       # box lids sit this far below the rail top
     sill_above_mattress: float = 1.0  # low lip across the exit opening
     exit_width: float = 16.0
-    slot_width: float = 2.0           # ASTM F1821: openings <= 2-3/8"
-    slat_width: float = 1.75
+    slot_width: float = 1.25          # ASTM F1821: openings <= 2-3/8"
+    slat_width: float = 1.0
     top_rail: float = 2.0             # solid band above the slots
     slot_gap_above_sill: float = 1.0  # solid band between sill line and slot bottoms
     gap_corner_radius: float = 1.5    # rounded top corners at the exit
     sill_fillet: float = 1.0          # rounded inside corners at the exit floor
+
+    # --- Head / foot boxes ---------------------------------------------
+    back_inset: float = 0.75          # back panel sits this far in from the wall (scribe room)
+    bottom_lift: float = 1.0          # box floor height above the room floor
+    tab_length: float = 3.0           # tab-and-slot joinery
+    tab_clearance: float = 0.01       # per side, slot vs tab
+    hinge_strip: float = 2.0          # fixed strip at the back of each lid
+    lid_gap: float = 0.0625           # gap around the opening lid
+    hand_hole: tuple = (3.5, 1.25)    # lid hand cut-out (length across the lid, width)
+    lid_corner_radius: float = 0.75
 
     # Variant 1 (side exit, like the reference photo): exit start from head wall
     side_exit_start: float = 38.0

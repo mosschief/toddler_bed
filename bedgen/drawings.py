@@ -1,0 +1,260 @@
+"""Shop drawings for one variant: part drawings, plan, section, exploded box,
+and a multi-page PDF that bundles them with the cut list and assembly notes."""
+import copy
+import os
+import textwrap
+
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.patches import PathPatch, Polygon as MplPolygon
+from shapely import affinity
+
+from .output import _path, fmt, render_iso
+from .parts import Part, Placement
+
+INK = "#333"
+
+
+def _dim(ax, p0, p1, text, offset, fs=7.5):
+    """Linear dimension between p0 and p1, drawn `offset` away (perpendicular)."""
+    p0, p1 = np.asarray(p0, float), np.asarray(p1, float)
+    d = p1 - p0
+    n = np.array([-d[1], d[0]]) / (np.linalg.norm(d) or 1)
+    a, b = p0 + n * offset, p1 + n * offset
+    for p, q in ((p0, a), (p1, b)):
+        ax.plot(*zip(p + n * 0.15 * np.sign(offset), q + n * 0.25 * np.sign(offset)), color="#888", lw=0.4)
+    ax.annotate("", a, b, arrowprops=dict(arrowstyle="<->", lw=0.6, color=INK, shrinkA=0, shrinkB=0))
+    m = (a + b) / 2 + n * 0.35 * np.sign(offset)
+    rot = np.degrees(np.arctan2(d[1], d[0]))
+    if rot > 90 or rot < -90:
+        rot += 180
+    ax.text(*m, text, ha="center", va="center", rotation=rot, fontsize=fs, color=INK,
+            bbox=dict(fc="white", ec="none", pad=0.4))
+
+
+# ---------------------------------------------------------------------------
+def part_drawings(v, path):
+    parts = v.cut_parts
+    cols = 3
+    rows = int(np.ceil(len(parts) / cols))
+    fig, axes = plt.subplots(rows, cols, figsize=(14, 4.2 * rows), squeeze=False)
+    for ax in axes.flat:
+        ax.set_axis_off()
+    for ax, part in zip(axes.flat, parts):
+        ax.set_aspect("equal")
+        s = part.shape
+        w, h = part.size
+        ax.add_patch(PathPatch(_path(s), fc=part.color, ec="#5a4a32", lw=0.8))
+        _dim(ax, (0, 0), (w, 0), fmt(w), -max(w, h) * 0.07)
+        _dim(ax, (w, 0), (w, h), fmt(h), -max(w, h) * 0.07)
+        # hole/slot sizes, one representative of each size
+        seen = set()
+        for ring in s.interiors:
+            x0, y0, x1, y1 = ring.bounds
+            key = (round(x1 - x0, 3), round(y1 - y0, 3))
+            if key in seen:
+                continue
+            seen.add(key)
+            ax.annotate(f"{fmt(x1 - x0)} x {fmt(y1 - y0)}", ((x0 + x1) / 2, y1),
+                        xytext=((x0 + x1) / 2, y1 + max(w, h) * 0.05), fontsize=6.5, ha="center",
+                        arrowprops=dict(arrowstyle="-", lw=0.4, color="#666"), color="#555")
+        pad = max(w, h) * 0.15
+        ax.set_xlim(-pad * 0.4, w + pad)
+        ax.set_ylim(-pad, h + pad)
+        title = f"{part.name}  (qty {part.qty})"
+        ax.set_title(title + (f"\n{part.note}" if part.note else ""), fontsize=9.5)
+    fig.suptitle(f"{v.title}: part drawings (inches, {fmt(v.params.T)} plywood)", fontsize=13)
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    fig.savefig(path, dpi=130)
+    plt.close(fig)
+
+
+def plan_and_section(v, path):
+    p, h = v.params, v.heights
+    T, D, L, bw = p.T, p.depth, p.nook_width, p.box_width
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6), gridspec_kw=dict(width_ratios=[2.3, 1]))
+
+    # ---- plan (looking down; front of bed at the bottom)
+    ax1.set_aspect("equal")
+    ax1.set_axis_off()
+    ax1.add_patch(MplPolygon([(0, T + D), (L, T + D), (L, T + D + 1), (0, T + D + 1)], fc="#bbb", ec="none"))
+    for x in (0, L):
+        ax1.add_patch(MplPolygon([(x - (1 if x == 0 else 0), -2), (x + (0 if x == 0 else 1), -2),
+                                  (x + (0 if x == 0 else 1), T + D + 1), (x - (1 if x == 0 else 0), T + D + 1)],
+                                 fc="#bbb", ec="none"))
+    mx = bw + p.mattress_clearance
+    ax1.add_patch(MplPolygon([(mx, T + p.mattress_clearance / 2), (mx + p.mattress_length, T + p.mattress_clearance / 2),
+                              (mx + p.mattress_length, T + p.mattress_clearance / 2 + p.mattress_width),
+                              (mx, T + p.mattress_clearance / 2 + p.mattress_width)], fc="#f4f1ea", ec="#999", ls="--"))
+    ax1.text(L / 2, T + D / 2, f"mattress {fmt(p.mattress_length)} x {fmt(p.mattress_width)}", ha="center",
+             fontsize=9, color="#777")
+    for part in v.cut_parts:
+        r = np.asarray(part.shape.exterior.coords)
+        for pl in part.placements:
+            c = np.vstack([pl.to_world(r, 0), pl.to_world(r, T)])
+            lo, hi = c.min(axis=0), c.max(axis=0)
+            if hi[2] - lo[2] < T + 1e-6 and part.name.startswith("Box"):
+                continue  # horizontal box parts hide the joinery; show the walls
+            ax1.add_patch(MplPolygon([(lo[0], lo[1]), (hi[0], lo[1]), (hi[0], hi[1]), (lo[0], hi[1])],
+                                     fc=part.color, ec="#5a4a32", lw=0.6))
+    _dim(ax1, (0, 0), (L, 0), f"nook {fmt(L)}", -4)
+    _dim(ax1, (0, T + D), (bw, T + D), fmt(bw), 2.5)
+    _dim(ax1, (L - bw, T + D), (L, T + D), fmt(bw), 2.5)
+    _dim(ax1, (bw, T + D), (L - bw, T + D), f"mattress opening {fmt(L - 2 * bw)}", 2.5)
+    _dim(ax1, (L, 0), (L, T + D), f"overall depth {fmt(T + D)}", -3)
+    ex0, ex1 = h["exit"]
+    _dim(ax1, (ex0, 0), (ex1, 0), f"exit {fmt(ex1 - ex0)}", -1.5)
+    ax1.set_xlim(-4, L + 8)
+    ax1.set_ylim(-7, T + D + 6)
+    ax1.set_title("Plan (front of bed at the bottom)", fontsize=11)
+
+    # ---- section through the head box, looking from the mattress toward the head wall
+    ax2.set_aspect("equal")
+    ax2.set_axis_off()
+    side = next(pt for pt in v.cut_parts if pt.name == "Box side")
+    ax2.add_patch(PathPatch(_path(affinity.translate(side.shape, T, 0)), fc=side.color, ec="#5a4a32", lw=0.8))
+    front = h["rail_top"]
+    ax2.add_patch(MplPolygon([(0, 0), (T, 0), (T, front), (0, front)], fc="#e3cfa8", ec="#5a4a32", lw=0.8))
+    lid = next(pt for pt in v.cut_parts if pt.name == "Box lid")
+    strip = next(pt for pt in v.cut_parts if pt.name == "Lid hinge strip")
+    side_h = h["box_top"] - T
+    lid_d = lid.size[1]
+    ax2.add_patch(MplPolygon([(T + p.lid_gap, side_h), (T + p.lid_gap + lid_d, side_h),
+                              (T + p.lid_gap + lid_d, side_h + T), (T + p.lid_gap, side_h + T)],
+                             fc=lid.color, ec="#5a4a32", lw=0.8))
+    s0 = T + D - p.hinge_strip
+    ax2.add_patch(MplPolygon([(s0, side_h), (T + D, side_h), (T + D, side_h + T), (s0, side_h + T)],
+                             fc=strip.color, ec="#5a4a32", lw=0.8))
+    ax2.plot([s0, s0], [side_h + T, side_h + T + 0.6], color="#c0392b", lw=1.2)
+    ax2.text(s0, side_h + T + 0.9, "hinge", ha="center", fontsize=7, color="#c0392b")
+    ax2.add_patch(MplPolygon([(T + D, -1), (T + D + 1, -1), (T + D + 1, front + 3), (T + D, front + 3)],
+                             fc="#bbb", ec="none"))
+    ax2.plot([-2, T + D + 1], [0, 0], color="#555", lw=1)
+    _dim(ax2, (T + D + 1, 0), (T + D + 1, front), f"rail {fmt(front)}", -3.2)
+    _dim(ax2, (T + D + 1, 0), (T + D + 1, h["box_top"]), f"lid {fmt(h['box_top'])}", -1.4)
+    _dim(ax2, (0, 0), (0, h["mattress_top"]), f"mattress {fmt(h['mattress_top'])}", 1.6)
+    _dim(ax2, (0, 0), (T + D, 0), f"{fmt(T + D)}", -1.8)
+    ax2.text(T + 0.3, front + 0.4, "guard panel", fontsize=7, color="#555")
+    ax2.text(T + D - 0.2, front + 1.2, "wall", fontsize=7, color="#555", ha="right")
+    ax2.set_xlim(-6, T + D + 8)
+    ax2.set_ylim(-4, front + 4)
+    ax2.set_title("Section through the head box", fontsize=11)
+    fig.tight_layout()
+    fig.savefig(path, dpi=130)
+    plt.close(fig)
+
+
+def exploded_box(v, path):
+    """Head box pulled apart so the tab-and-slot joints are visible."""
+    p = v.params
+    bw = p.box_width
+    offsets = {"Box side": None, "Box back": (0, 6, 0), "Box floor": (0, 0, -0), "Lid hinge strip": (0, 3, 8),
+               "Box lid": (0, -2, 6)}
+    parts = []
+    for part in v.cut_parts:
+        if part.name not in offsets:
+            continue
+        q = copy.copy(part)
+        q.placements = []
+        for pl in part.placements:
+            if pl.origin[0] > bw:
+                continue  # head box only
+            off = offsets[part.name]
+            if off is None:  # sides move apart along x
+                off = (-5, 0, 0) if pl.origin[0] < bw / 2 else (5, 0, 0)
+            if part.name == "Box floor":
+                off = (0, -3, 0)
+            q.placements.append(Placement(tuple(np.add(pl.origin, off)), pl.u, pl.v, pl.n))
+        parts.append(q)
+    _render_parts(v, parts, path, "Head box, exploded (tabs pass through the sides)")
+
+
+def _render_parts(v, parts, path, title):
+    vv = copy.copy(v)
+    vv.params = copy.copy(v.params)
+    vv.params.nook_width = v.params.box_width  # shrink the backdrop to the box
+    render_iso(vv, path, view=(0.9, 1.0, -0.7), parts=parts, title=title)
+
+
+# ---------------------------------------------------------------------------
+ASSEMBLY = """
+1. Cut all parts (sheets/panel_*.dxf). Profile CUT_INSIDE before CUT_OUTSIDE, use tabs/onion skin
+   on the small parts, and dry-fit the puzzle joint on scrap first; adjust knob_clearance if needed.
+2. Ease every exposed edge with a 1/4" roundover (rail top, slots, exit opening, lid edges and the
+   hand hole). Leave the joinery edges and the faces that meet the wall square.
+3. Boxes: glue the back and floor tabs into one side, add the second side, clamp square. Tabs are
+   flush with the outside faces. Pre-drill and screw (1-1/4") through the side into each tab.
+4. Set both boxes in the nook, tight to the side walls. Shim level, then screw through each box back
+   into a stud (2-1/2" screws, 2 per box). The 3/4" behind the back lets you scribe the sides to the wall.
+5. Glue the two guard-panel halves together on a flat surface (puzzle joint), let it cure.
+6. Fix the guard panel to the front edges of the box sides with glue + 1-1/4" pocket screws (3 per
+   side). Drill the pocket holes in the inside faces of the sides before step 3, and drive them with a
+   long or right-angle driver, so no screws show on the front.
+7. Glue + screw each lid hinge strip to its box side tops. Hang the lids on the strips with two
+   no-mortise hinges each, and fit a soft-close lid stay so a lid can't drop on fingers.
+8. Finish (water-based poly or hardwax oil rated toy-safe), let it cure fully, then drop in the mattress.
+""".strip()
+
+HARDWARE = """
+- Wood glue (PVA)
+- 1-1/4" wood screws x 24 (box joinery, hinge strips)
+- 1-1/4" pocket-hole screws x 12 (guard panel to boxes)
+- 2-1/2" screws x 4 into studs (box backs)
+- No-mortise hinges x 4 (2 per lid)
+- Soft-close lid stays x 2 (light-duty toy-box type)
+- Shims as needed
+""".strip()
+
+
+def _text_page(pdf, title, blocks):
+    fig = plt.figure(figsize=(11, 8.5))
+    fig.text(0.06, 0.94, title, fontsize=16, weight="bold")
+    y = 0.88
+    for head, body in blocks:
+        fig.text(0.06, y, head, fontsize=12, weight="bold")
+        y -= 0.035
+        for line in body.splitlines():
+            for wrapped in textwrap.wrap(line, 118, subsequent_indent="   ") or [""]:
+                fig.text(0.06, y, wrapped, fontsize=9, family="monospace")
+                y -= 0.024
+        y -= 0.02
+    pdf.savefig(fig)
+    plt.close(fig)
+
+
+def _image_page(pdf, img_path):
+    img = plt.imread(img_path)
+    fig = plt.figure(figsize=(11, 8.5))
+    ax = fig.add_axes([0.02, 0.02, 0.96, 0.96])
+    ax.imshow(img)
+    ax.set_axis_off()
+    pdf.savefig(fig)
+    plt.close(fig)
+
+
+def build_package(v, outdir, cut_list_md):
+    files = {
+        "part_drawings": os.path.join(outdir, "part_drawings.png"),
+        "plan_section": os.path.join(outdir, "plan_section.png"),
+        "exploded_box": os.path.join(outdir, "exploded_box.png"),
+    }
+    part_drawings(v, files["part_drawings"])
+    plan_and_section(v, files["plan_section"])
+    exploded_box(v, files["exploded_box"])
+
+    rows = [ln for ln in cut_list_md.splitlines() if ln.startswith("|") and not ln.startswith("|---")]
+    table = "\n".join(
+        f"{c[0]:<24}{c[1]:>4}   {c[2]:<26}{c[3]}"
+        for c in ([x.strip() for x in r.strip("|").split("|")] for r in rows))
+    facts = "\n".join(ln[2:].replace("**", "") for ln in cut_list_md.splitlines() if ln.startswith("- "))
+    with PdfPages(os.path.join(outdir, "drawings.pdf")) as pdf:
+        for name in ("preview.png", "front.png"):
+            _image_page(pdf, os.path.join(outdir, name))
+        for key in ("plan_section", "exploded_box", "part_drawings"):
+            _image_page(pdf, files[key])
+        _image_page(pdf, os.path.join(outdir, "nesting.png"))
+        _text_page(pdf, f"{v.title}: cut list, hardware, assembly",
+                   [("Cut list", table), ("Key dimensions", facts), ("Hardware", HARDWARE),
+                    ("Assembly", ASSEMBLY)])
+    return files
