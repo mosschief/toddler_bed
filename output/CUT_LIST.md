@@ -17,7 +17,7 @@ Mattress on the floor, exit toward the foot end like the reference photo.
 | Box lid | 2 | 5 3/4" x 27 5/8" | piano hinge along the long wall-side edge |
 
 - **Panels:** 2 pieces of 4'x4' (1 x 4'x8' sheet(s) of 3/4" plywood, each cut in half)
-- **Heights from floor:** mattress top 5", rail top 14", box lids 13", exit sill 6"
+- **Heights from floor:** mattress top 5", rail top 14", box lids 13", exit sill 4"
 - **Exit opening:** 38" to 54" from the head wall; panel halves join at 44"
 - **Head/foot boxes:** 5 3/4" wide outside, 4 1/4" inside, 27 3/4" deep
 
@@ -36,7 +36,7 @@ Mattress on the floor, exit in the middle; the two panel halves are mirror-lengt
 | Box lid | 2 | 5 3/4" x 27 5/8" | piano hinge along the long wall-side edge |
 
 - **Panels:** 2 pieces of 4'x4' (1 x 4'x8' sheet(s) of 3/4" plywood, each cut in half)
-- **Heights from floor:** mattress top 5", rail top 14", box lids 13", exit sill 6"
+- **Heights from floor:** mattress top 5", rail top 14", box lids 13", exit sill 4"
 - **Exit opening:** 24" to 40" from the head wall; panel halves join at 32"
 - **Head/foot boxes:** 5 3/4" wide outside, 4 1/4" inside, 27 3/4" deep
 
@@ -60,6 +60,6 @@ Mattress on a plywood deck over two small IKEA HEMNES underbed boxes, with plywo
 | Drawer face | 2 | 25 5/8" x 7 3/8" | screw to the IKEA box from inside |
 
 - **Panels:** 5 pieces of 4'x4' (3 x 4'x8' sheet(s) of 3/4" plywood, each cut in half)
-- **Heights from floor:** mattress top 13 5/8", rail top 22 5/8", box lids 21 5/8", exit sill 14 5/8"
+- **Heights from floor:** mattress top 13 5/8", rail top 22 5/8", box lids 21 5/8", exit sill 12 5/8"
 - **Exit opening:** 24" to 40" from the head wall; panel halves join at 32"
 - **Head/foot boxes:** 5 3/4" wide outside, 4 1/4" inside, 27 3/4" deep

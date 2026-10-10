@@ -26,12 +26,12 @@ class Params:
     # --- Front guard panel -----------------------------------------------
     rail_above_mattress: float = 9.0  # top of rail above mattress top (ASTM F1821 min is 5")
     lid_below_rail: float = 1.0       # box lids sit this far below the rail top
-    sill_above_mattress: float = 1.0  # low lip across the exit opening
+    sill_above_mattress: float = -1.0 # exit floor vs mattress top (negative shows the mattress edge)
     exit_width: float = 16.0
     slot_width: float = 2.0           # ASTM F1821: openings <= 2-3/8"
     slat_width: float = 1.75
     top_rail: float = 2.0             # solid band above the slots
-    slot_gap_above_sill: float = 1.0  # solid band between sill line and slot bottoms
+    slot_gap_above_sill: float = 0.0  # slot bottoms vs the exit floor line
     gap_corner_radius: float = 1.5    # rounded top corners at the exit
     sill_fillet: float = 1.0          # rounded inside corners at the exit floor
 
