@@ -28,8 +28,8 @@ class Params:
     lid_below_rail: float = 1.0       # box lids sit this far below the rail top
     sill_above_mattress: float = 1.0  # low lip across the exit opening
     exit_width: float = 16.0
-    slot_width: float = 1.25          # ASTM F1821: openings <= 2-3/8"
-    slat_width: float = 1.0
+    slot_width: float = 2.0           # ASTM F1821: openings <= 2-3/8"
+    slat_width: float = 1.75
     top_rail: float = 2.0             # solid band above the slots
     slot_gap_above_sill: float = 1.0  # solid band between sill line and slot bottoms
     gap_corner_radius: float = 1.5    # rounded top corners at the exit
@@ -40,7 +40,6 @@ class Params:
     bottom_lift: float = 1.0          # box floor height above the room floor
     tab_length: float = 3.0           # tab-and-slot joinery
     tab_clearance: float = 0.01       # per side, slot vs tab
-    hinge_strip: float = 1.5          # fixed strip along the wall side of each lid
     lid_gap: float = 0.0625           # gap around the opening lid
     hand_notch: tuple = (4.0, 1.5)    # hand cut-out in the mattress-side panel (width, depth)
     lid_corner_radius: float = 0.75

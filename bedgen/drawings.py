@@ -122,7 +122,7 @@ def plan_and_section(v, path):
     ax2.add_patch(MplPolygon([(T + p.lid_gap, side_h), (T + p.lid_gap + lid_d, side_h),
                               (T + p.lid_gap + lid_d, side_h + T), (T + p.lid_gap, side_h + T)],
                              fc=lid.color, ec="#5a4a32", lw=0.8))
-    ax2.text(T + D / 2, side_h + T + 0.5, "lid hinges along the wall side (behind)", ha="center",
+    ax2.text(T + D / 2, side_h + T + 0.5, "one-piece lid, hinged along the wall side (behind)", ha="center",
              fontsize=7, color="#c0392b")
     ax2.text(T + D / 2, side_h - p.hand_notch[1] - 0.6, "hand cut-out", ha="center", fontsize=7, color="#555")
     ax2.add_patch(MplPolygon([(T + D, -1), (T + D + 1, -1), (T + D + 1, front + 3), (T + D, front + 3)],
@@ -147,7 +147,7 @@ def exploded_box(v, path):
     p = v.params
     bw = p.box_width
     offsets = {"Box side (wall)": (-5, 0, 0), "Box side (mattress)": (5, 0, 0), "Box back": (0, 6, 0),
-               "Box floor": (0, -3, 0), "Lid hinge strip": (-3, 0, 8), "Box lid": (3, 0, 6)}
+               "Box floor": (0, -3, 0), "Box lid": (0, 0, 6)}
     parts = []
     for part in v.cut_parts:
         if part.name not in offsets:
@@ -184,15 +184,16 @@ ASSEMBLY = """
 6. Fix the guard panel to the front edges of the box sides with glue + 1-1/4" pocket screws (3 per
    side). Drill the pocket holes in the inside faces of the sides before step 3, and drive them with a
    long or right-angle driver, so no screws show on the front.
-7. Glue + screw each lid hinge strip on top of the wall-side panel. Hang each lid on its strip with a
-   piano hinge along the long edge, so it opens toward the mattress, and fit a soft-close lid stay
-   so a lid can't drop on fingers. The hand cut-out in the mattress-side panel is where you lift it.
+7. Hang each lid with a piano hinge along its long wall-side edge (on the top outside edge of the
+   wall-side panel), so it opens toward the mattress and stands up against the wall. Fit a
+   soft-close lid stay so a lid can't drop on fingers. Lift it at the hand cut-out in the
+   mattress-side panel.
 8. Finish (water-based poly or hardwax oil rated toy-safe), let it cure fully, then drop in the mattress.
 """.strip()
 
 HARDWARE = """
 - Wood glue (PVA)
-- 1-1/4" wood screws x 26 (box joinery, hinge strips)
+- 1-1/4" wood screws x 16 (box joinery)
 - 1-1/4" pocket-hole screws x 12 (guard panel to boxes)
 - 2-1/2" screws x 4 into studs (box backs)
 - Piano hinge 1-1/2" open width, 2 x 24" lengths (1 per lid)

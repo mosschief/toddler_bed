@@ -28,7 +28,7 @@ Each variant folder has:
 
 - The guard panel runs the full 64" across the front. Its two ends are solid
   and form the fronts of the head and foot boxes; the middle has rounded
-  slots (1 1/4" wide with 1" slats, under the 2-3/8" limit in ASTM F1821)
+  slots (2" wide with 1 3/4" slats, under the 2-3/8" limit in ASTM F1821)
   and the exit opening.
 - The panel is longer than the CNC bed, so it is cut as two pieces joined by a
   glued two-knob puzzle joint placed in the low sill under the exit. With a
@@ -38,8 +38,8 @@ Each variant folder has:
   (5 3/4" wide each with the defaults; 4 1/4" inside). They are joined with
   through tab-and-slot joints (dog-boned slots), have a floor raised 1" and a
   back set 3/4" in from the wall for scribing.
-- Each lid is hinged along its long wall-side edge (on a fixed 1 1/2" strip)
-  and opens toward the mattress. The big mattress-side panel of each box has
+- Each lid is one piece, piano-hinged along its long wall-side edge, and
+  opens toward the mattress. The big mattress-side panel of each box has
   a 4" wide hand cut-out in the middle of its top edge for lifting the lid.
   Lids sit 1" below the rail top, tucked behind the guard panel.
 - Raised version: the deck is two halves meeting over a centre divider and

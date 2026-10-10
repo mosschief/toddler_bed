@@ -90,9 +90,8 @@ def storage_boxes(p: Params, box_top, ledger_z=None, open_lid_deg=0.0):
     """Lidded boxes at each end. The guard panel is their front.
 
     Joinery: the back and the raised floor have tabs that pass through
-    dog-boned slots in both sides. The lid is in two pieces: a fixed strip
-    on top of the wall-side panel, and the lid hinged to it along its long
-    edge, so it opens toward the mattress. The mattress-side panel has a
+    dog-boned slots in both sides. The one-piece lid is piano-hinged along
+    its long wall-side edge, so it opens toward the mattress. The mattress-side panel has a
     hand cut-out in its top edge for lifting the lid.
     """
     T, D, bw, L = p.T, p.depth, p.box_width, p.nook_width
@@ -140,14 +139,11 @@ def storage_boxes(p: Params, box_top, ledger_z=None, open_lid_deg=0.0):
                               [rect(inner_w, u - tl / 2, inner_w + T, u + tl / 2) for u in floor_tabs])
     bottom = Part("Box floor", floor_shape, color=WOOD_DARK, note=f"sits {fmt_in(p.bottom_lift)} off the floor")
 
-    # --- lid: fixed strip along the wall side + lid hinged on its long edge
-    hs, g = p.hinge_strip, p.lid_gap
-    strip = Part("Lid hinge strip", rect(0, 0, hs, D), color=LID,
-                 note="glue + screw to the wall-side panel top")
-    lid_w = bw - hs - g
+    # --- one-piece lid, piano-hinged along its long wall-side edge
+    g = p.lid_gap
     lid_d = D - 2 * g
-    r = min(p.lid_corner_radius, lid_w / 2 - 0.1)
-    lid_shape = round_convex(rect(-5, 0, lid_w, lid_d), r).intersection(rect(0, 0, lid_w, lid_d))
+    r = min(p.lid_corner_radius, bw / 2 - 0.1)
+    lid_shape = round_convex(rect(-5, 0, bw, lid_d), r).intersection(rect(0, 0, bw, lid_d))
     lid = Part("Box lid", lid_shape, color=LID, note="piano hinge along the long wall-side edge")
 
     th = np.radians(open_lid_deg)
@@ -158,18 +154,17 @@ def storage_boxes(p: Params, box_top, ledger_z=None, open_lid_deg=0.0):
         back.placements.append(place((x0 + T, T + back_u0 + T, 0), X, Z, NY))
         bottom.placements.append(place((x0 + T, T, p.bottom_lift), X, Y, Z))
         wall_edge = 0 if sgn > 0 else L
-        strip.placements.append(place((wall_edge if sgn > 0 else L - hs, T, side_h), X, Y, Z))
-        hinge_x = wall_edge + sgn * (hs + g)
         if open_lid_deg and sgn > 0:
+            # pivot on the top outer edge; the lid stands up against the wall
             u = np.array([np.cos(th), 0, np.sin(th)])
             nrm = np.array([-np.sin(th), 0, np.cos(th)])
-            origin = np.array([hinge_x, T + g, side_h + T]) - T * nrm
+            origin = np.array([wall_edge, T + g, side_h + T]) - T * nrm
             lid.placements.append(place(origin, tuple(u), Y, tuple(nrm)))
         else:
-            lid.placements.append(place((hinge_x, T + g, side_h), (sgn, 0, 0), Y, Z))
+            lid.placements.append(place((wall_edge, T + g, side_h), (sgn, 0, 0), Y, Z))
     for part in (back, bottom):
         _shift_to_origin(part)
-    parts += [side, face, back, bottom, strip, lid]
+    parts += [side, face, back, bottom, lid]
 
     if ledger_z is not None:
         ledger = Part("Deck ledger (box side)", rect(0, 0, D, 1.5), color=WOOD_DARK,
@@ -217,7 +212,7 @@ def _floor_variant(p: Params, key, title, summary, exit_x0, joint_x):
 
     v = Variant(key, title, summary, p)
     v.parts = [pa, pb] + storage_boxes(p, box_top) + [mattress(p, 0)]
-    v.open_parts = [pa, pb] + storage_boxes(p, box_top, open_lid_deg=95) + [mattress(p, 0)]
+    v.open_parts = [pa, pb] + storage_boxes(p, box_top, open_lid_deg=88) + [mattress(p, 0)]
     v.heights = dict(mattress_top=mat_top, rail_top=rail_top, sill_top=sill_top,
                      box_top=box_top, exit=(ex0, ex1), joint_x=joint_x)
     return v
