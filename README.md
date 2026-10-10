@@ -28,7 +28,8 @@ Each variant folder has:
 
 - The guard panel runs the full 64" across the front. Its two ends are solid
   and form the fronts of the head and foot boxes; the middle has rounded
-  slots (2" wide, under the 2-3/8" limit in ASTM F1821) and the exit opening.
+  slots (1 1/4" wide with 1" slats, under the 2-3/8" limit in ASTM F1821)
+  and the exit opening.
 - The panel is longer than the CNC bed, so it is cut as two pieces joined by a
   glued two-knob puzzle joint placed in the low sill under the exit. With a
   centred exit the halves are 33" and 32" long; with the side exit the long
