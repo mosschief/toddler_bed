@@ -40,9 +40,9 @@ class Params:
     bottom_lift: float = 1.0          # box floor height above the room floor
     tab_length: float = 3.0           # tab-and-slot joinery
     tab_clearance: float = 0.01       # per side, slot vs tab
-    hinge_strip: float = 2.0          # fixed strip at the back of each lid
+    hinge_strip: float = 1.5          # fixed strip along the wall side of each lid
     lid_gap: float = 0.0625           # gap around the opening lid
-    hand_hole: tuple = (3.5, 1.25)    # lid hand cut-out (length across the lid, width)
+    hand_notch: tuple = (4.0, 1.5)    # hand cut-out in the mattress-side panel (width, depth)
     lid_corner_radius: float = 0.75
 
     # Variant 1 (side exit, like the reference photo): exit start from head wall

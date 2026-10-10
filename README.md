@@ -38,9 +38,10 @@ Each variant folder has:
   (5 3/4" wide each with the defaults; 4 1/4" inside). They are joined with
   through tab-and-slot joints (dog-boned slots), have a floor raised 1" and a
   back set 3/4" in from the wall for scribing.
-- Each lid is a fixed 2" hinge strip plus an opening lid with rounded front
-  corners and a 3 1/2" x 1 1/4" hand hole in the middle. Lids sit 1" below
-  the rail top, tucked behind the guard panel.
+- Each lid is hinged along its long wall-side edge (on a fixed 1 1/2" strip)
+  and opens toward the mattress. The big mattress-side panel of each box has
+  a 4" wide hand cut-out in the middle of its top edge for lifting the lid.
+  Lids sit 1" below the rail top, tucked behind the guard panel.
 - Raised version: the deck is two halves meeting over a centre divider and
   sitting on ledgers screwed to the boxes and the wall. The IKEA fronts are
   replaced by inset plywood faces with a cut-through finger pull.

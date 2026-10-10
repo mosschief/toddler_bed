@@ -112,22 +112,19 @@ def plan_and_section(v, path):
     # ---- section through the head box, looking from the mattress toward the head wall
     ax2.set_aspect("equal")
     ax2.set_axis_off()
-    side = next(pt for pt in v.cut_parts if pt.name == "Box side")
+    side = next(pt for pt in v.cut_parts if pt.name == "Box side (mattress)")
     ax2.add_patch(PathPatch(_path(affinity.translate(side.shape, T, 0)), fc=side.color, ec="#5a4a32", lw=0.8))
     front = h["rail_top"]
     ax2.add_patch(MplPolygon([(0, 0), (T, 0), (T, front), (0, front)], fc="#e3cfa8", ec="#5a4a32", lw=0.8))
     lid = next(pt for pt in v.cut_parts if pt.name == "Box lid")
-    strip = next(pt for pt in v.cut_parts if pt.name == "Lid hinge strip")
     side_h = h["box_top"] - T
     lid_d = lid.size[1]
     ax2.add_patch(MplPolygon([(T + p.lid_gap, side_h), (T + p.lid_gap + lid_d, side_h),
                               (T + p.lid_gap + lid_d, side_h + T), (T + p.lid_gap, side_h + T)],
                              fc=lid.color, ec="#5a4a32", lw=0.8))
-    s0 = T + D - p.hinge_strip
-    ax2.add_patch(MplPolygon([(s0, side_h), (T + D, side_h), (T + D, side_h + T), (s0, side_h + T)],
-                             fc=strip.color, ec="#5a4a32", lw=0.8))
-    ax2.plot([s0, s0], [side_h + T, side_h + T + 0.6], color="#c0392b", lw=1.2)
-    ax2.text(s0, side_h + T + 0.9, "hinge", ha="center", fontsize=7, color="#c0392b")
+    ax2.text(T + D / 2, side_h + T + 0.5, "lid hinges along the wall side (behind)", ha="center",
+             fontsize=7, color="#c0392b")
+    ax2.text(T + D / 2, side_h - p.hand_notch[1] - 0.6, "hand cut-out", ha="center", fontsize=7, color="#555")
     ax2.add_patch(MplPolygon([(T + D, -1), (T + D + 1, -1), (T + D + 1, front + 3), (T + D, front + 3)],
                              fc="#bbb", ec="none"))
     ax2.plot([-2, T + D + 1], [0, 0], color="#555", lw=1)
@@ -139,7 +136,7 @@ def plan_and_section(v, path):
     ax2.text(T + D - 0.2, front + 1.2, "wall", fontsize=7, color="#555", ha="right")
     ax2.set_xlim(-6, T + D + 8)
     ax2.set_ylim(-4, front + 4)
-    ax2.set_title("Section through the head box", fontsize=11)
+    ax2.set_title("Head box seen from the mattress", fontsize=11)
     fig.tight_layout()
     fig.savefig(path, dpi=130)
     plt.close(fig)
@@ -149,8 +146,8 @@ def exploded_box(v, path):
     """Head box pulled apart so the tab-and-slot joints are visible."""
     p = v.params
     bw = p.box_width
-    offsets = {"Box side": None, "Box back": (0, 6, 0), "Box floor": (0, 0, -0), "Lid hinge strip": (0, 3, 8),
-               "Box lid": (0, -2, 6)}
+    offsets = {"Box side (wall)": (-5, 0, 0), "Box side (mattress)": (5, 0, 0), "Box back": (0, 6, 0),
+               "Box floor": (0, -3, 0), "Lid hinge strip": (-3, 0, 8), "Box lid": (3, 0, 6)}
     parts = []
     for part in v.cut_parts:
         if part.name not in offsets:
@@ -161,10 +158,6 @@ def exploded_box(v, path):
             if pl.origin[0] > bw:
                 continue  # head box only
             off = offsets[part.name]
-            if off is None:  # sides move apart along x
-                off = (-5, 0, 0) if pl.origin[0] < bw / 2 else (5, 0, 0)
-            if part.name == "Box floor":
-                off = (0, -3, 0)
             q.placements.append(Placement(tuple(np.add(pl.origin, off)), pl.u, pl.v, pl.n))
         parts.append(q)
     _render_parts(v, parts, path, "Head box, exploded (tabs pass through the sides)")
@@ -191,17 +184,18 @@ ASSEMBLY = """
 6. Fix the guard panel to the front edges of the box sides with glue + 1-1/4" pocket screws (3 per
    side). Drill the pocket holes in the inside faces of the sides before step 3, and drive them with a
    long or right-angle driver, so no screws show on the front.
-7. Glue + screw each lid hinge strip to its box side tops. Hang the lids on the strips with two
-   no-mortise hinges each, and fit a soft-close lid stay so a lid can't drop on fingers.
+7. Glue + screw each lid hinge strip on top of the wall-side panel. Hang each lid on its strip with a
+   piano hinge along the long edge, so it opens toward the mattress, and fit a soft-close lid stay
+   so a lid can't drop on fingers. The hand cut-out in the mattress-side panel is where you lift it.
 8. Finish (water-based poly or hardwax oil rated toy-safe), let it cure fully, then drop in the mattress.
 """.strip()
 
 HARDWARE = """
 - Wood glue (PVA)
-- 1-1/4" wood screws x 24 (box joinery, hinge strips)
+- 1-1/4" wood screws x 26 (box joinery, hinge strips)
 - 1-1/4" pocket-hole screws x 12 (guard panel to boxes)
 - 2-1/2" screws x 4 into studs (box backs)
-- No-mortise hinges x 4 (2 per lid)
+- Piano hinge 1-1/2" open width, 2 x 24" lengths (1 per lid)
 - Soft-close lid stays x 2 (light-duty toy-box type)
 - Shims as needed
 """.strip()
