@@ -11,7 +11,7 @@ from matplotlib.patches import PathPatch, Polygon as MplPolygon
 from shapely import affinity
 
 from .output import _path, fmt, render_iso
-from .parts import Part, Placement
+from .parts import Part, Placement, rect, round_convex, slot_with_dogbones
 
 INK = "#333"
 
@@ -163,6 +163,69 @@ def exploded_box(v, path):
     _render_parts(v, parts, path, "Head box, exploded (tabs pass through the sides)")
 
 
+def dogbone_detail(v, path):
+    """Close-up of a groove end, with and without dogbones, plus the full groove."""
+    from matplotlib.patches import Circle
+    p = v.params
+    T, r = p.T, p.bit_diameter / 2
+    wood, ink, red = "#e3cfa8", "#5a4a32", "#c0392b"
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5.6), gridspec_kw=dict(width_ratios=[1, 1, 0.8]))
+    L = 1.6  # length of groove shown
+
+    def groove_view(ax, groove, title, show_bad):
+        ax.set_aspect("equal")
+        ax.set_axis_off()
+        panel = rect(-0.9, -0.2, T + 0.9, L + 0.7).difference(groove)
+        ax.add_patch(PathPatch(_path(panel), fc=wood, ec=ink, lw=1))
+        # the box side's square end, dropped into the groove
+        ax.add_patch(MplPolygon([(0, -0.2), (T, -0.2), (T, L), (0, L)], closed=True, fc="none",
+                                ec="#1f6feb", lw=1.6, ls="--"))
+        ax.text(T / 2, L * 0.45, "box side\n(square end)", ha="center", fontsize=8, color="#1f6feb")
+        if show_bad:
+            clash = rect(0, 0, T, L).difference(groove)
+            for g in getattr(clash, "geoms", [clash]):
+                ax.add_patch(PathPatch(_path(g), fc=red, ec=red, lw=0.5))
+            ax.annotate("rounded corners left by the bit:\nthe square side hits here", (T, L), (T + 0.25, L + 0.45),
+                        fontsize=8, color=red, arrowprops=dict(arrowstyle="-", color=red, lw=0.8))
+        else:
+            ax.add_patch(Circle((T - r / 2 ** 0.5, L - r / 2 ** 0.5), r + 0.01, fc="none", ec=red, lw=0.8, ls=":"))
+            ax.annotate(f"dogbone: the {fmt(p.bit_diameter)} bit plunges\ninto each corner, so the\n"
+                        "square side seats fully", (T, L), (T + 0.25, L + 0.4), fontsize=8, color=red,
+                        arrowprops=dict(arrowstyle="-", color=red, lw=0.8))
+        _dim(ax, (0, -0.2), (T, -0.2), f"{fmt(T)} groove", -0.25, fs=7)
+        ax.set_xlim(-1.0, T + 1.9)
+        ax.set_ylim(-0.75, L + 1.0)
+        ax.set_title(title, fontsize=10)
+
+    plain = round_convex(rect(0, -1, T, L), r)
+    groove_view(axes[0], plain, "Without dogbones (red = wood that blocks the square corner)", True)
+    groove_view(axes[1], slot_with_dogbones(0, -1, T, L, p.bit_diameter), "With dogbones", False)
+
+    # full groove on the back of the front panel, at a box side
+    ax = axes[2]
+    ax.set_aspect("equal")
+    ax.set_axis_off()
+    h = v.heights
+    side_h = h["box_top"] - T
+    panel = rect(-4, 0, T + 4, h["rail_top"]).difference(slot_with_dogbones(0, -1, T, side_h, p.bit_diameter))
+    ax.add_patch(PathPatch(_path(panel), fc=wood, ec=ink, lw=1))
+    ax.text(T / 2, side_h / 2, "groove\n3/8\" deep", ha="center", va="center", rotation=90, fontsize=8)
+    ax.annotate("dogbones at the top", (T, side_h), (T + 1.2, side_h + 1.2), fontsize=8, color=red,
+                arrowprops=dict(arrowstyle="-", color=red, lw=0.8))
+    ax.annotate("open at the bottom edge:\nno corner to clear", (T, 0.2), (T + 1.2, 2.0), fontsize=8, color=red,
+                arrowprops=dict(arrowstyle="-", color=red, lw=0.8))
+    _dim(ax, (-4, 0), (-4, side_h), fmt(side_h), 0.8, fs=7)
+    ax.set_xlim(-6, T + 6)
+    ax.set_ylim(-1, h["rail_top"] + 1)
+    ax.set_title("Back of the front panel, one groove", fontsize=10)
+
+    fig.suptitle("Dogbones: how a square part fits a CNC-cut groove (looking at the back of the front panel)",
+                 fontsize=12)
+    fig.tight_layout(rect=(0, 0, 1, 0.94))
+    fig.savefig(path, dpi=140)
+    plt.close(fig)
+
+
 def _render_parts(v, parts, path, title):
     vv = copy.copy(v)
     vv.params = copy.copy(v.params)
@@ -233,7 +296,9 @@ def build_package(v, outdir, cut_list_md):
         "part_drawings": os.path.join(outdir, "part_drawings.png"),
         "plan_section": os.path.join(outdir, "plan_section.png"),
         "exploded_box": os.path.join(outdir, "exploded_box.png"),
+        "dogbone_detail": os.path.join(outdir, "dogbone_detail.png"),
     }
+    dogbone_detail(v, files["dogbone_detail"])
     part_drawings(v, files["part_drawings"])
     plan_and_section(v, files["plan_section"])
     exploded_box(v, files["exploded_box"])
@@ -246,7 +311,7 @@ def build_package(v, outdir, cut_list_md):
     with PdfPages(os.path.join(outdir, "drawings.pdf")) as pdf:
         for name in ("preview.png", "front.png"):
             _image_page(pdf, os.path.join(outdir, name))
-        for key in ("plan_section", "exploded_box", "part_drawings"):
+        for key in ("plan_section", "exploded_box", "dogbone_detail", "part_drawings"):
             _image_page(pdf, files[key])
         _image_page(pdf, os.path.join(outdir, "nesting.png"))
         _text_page(pdf, f"{v.title}: cut list, hardware, assembly",
