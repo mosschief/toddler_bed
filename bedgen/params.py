@@ -43,7 +43,7 @@ class Params:
     fern_height: float = 10.75        # "ferns": fern-frond cut-outs, nearly full panel height
     fern_bottom: float = 1.75         # frond stems start this far above the floor
     fern_pitch: float = 5.0
-    fern_leaf_width: float = 0.55     # leaflet width; ends stay round enough for a 1/4" bit
+    fern_leaf_width: float = 0.75     # plump leaflets; ends stay round enough for a 1/4" bit
     fern_web: float = 0.25            # minimum wood between leaflets
     gap_corner_radius: float = 1.5    # rounded top corners at the exit
     sill_fillet: float = 1.0          # rounded inside corners at the exit floor
