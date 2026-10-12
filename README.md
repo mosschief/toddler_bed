@@ -13,12 +13,14 @@ Four variants are generated:
 | [`v1c_side_exit_one_box_flush`](output/v1c_side_exit_one_box_flush) | on the floor, against the foot wall | as v1b, with the lid and foot board flush with the rail top | 2 |
 | [`v1d_side_exit_one_box_flowers`](output/v1d_side_exit_one_box_flowers) | on the floor, against the foot wall | as v1c, with flower cut-outs in the rail instead of slots | 2 |
 | [`v1e_side_exit_foot_box`](output/v1e_side_exit_foot_box) | on the floor, against the head wall | as v1c, with the box at the foot end and the exit moved to 35"-51" | 2 |
+| [`v1f_side_exit_foot_box_trees`](output/v1f_side_exit_foot_box_trees) | on the floor, against the head wall | as v1e, with a staggered row of pine-tree cut-outs instead of slots | 2 |
 | [`v2_center_exit`](output/v2_center_exit) | on the floor | centred; two near-equal panel halves | 2 |
 | [`v3_raised_drawers`](output/v3_raised_drawers) | on a deck over 2 small IKEA HEMNES underbed boxes | centred | 5 |
 
-**`v1_side_exit` is the chosen design**, with `v1b_side_exit_one_box` and
-`v1c_side_exit_one_box_flush` / `v1d_side_exit_one_box_flowers` /
-`v1e_side_exit_foot_box` as one-box alternatives. All of them get the full CAD package:
+**`v1e_side_exit_foot_box` is the chosen design**: one box at the foot end,
+lid flush with the rail top, straight slots. `v1f_side_exit_foot_box_trees` is
+the same bed with tree cut-outs; the other `v1*` beds are earlier
+alternatives. All the `v1*` beds get the full CAD package:
 
 - `<variant>.step`: 3D assembly (millimetres, one named solid per part) for Fusion 360, Onshape, FreeCAD etc.
 - `drawings.pdf`: 3D view, front view, plan, section through a box, exploded box, dimensioned part drawings, nesting, cut list, hardware and assembly steps
@@ -37,7 +39,8 @@ Each variant folder has:
   slots (2" wide with 1 3/4" slats, under the 2-3/8" limit in ASTM F1821)
   and the exit opening. Set `rail_cutouts = "flowers"` for 6 3/4" daisy cut-outs
   instead; their widest opening (the centre) is about 2", and the wood
-  between petals is at least 0.3" wide.
+  between petals is at least 0.3" wide. `rail_cutouts = "trees"` gives a
+  staggered row of 7" pine trees (widest opening about 1 7/8").
 - The panel is longer than the CNC bed, so it is cut as two pieces joined by a
   glued two-knob puzzle joint placed in the low sill under the exit. With a
   centred exit the halves are 33" and 32" long; with the side exit the long

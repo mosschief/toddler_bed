@@ -36,6 +36,10 @@ class Params:
     flower_diameter: float = 6.75     # tip to tip; 6 3/4" keeps the widest opening under 2-3/8"
     flower_gap: float = 1.5           # solid wood between neighbouring flowers
     flower_petals: float = 8
+    tree_height: float = 7.0          # "trees": pine-tree cut-outs, alternate ones raised
+    tree_width: float = 3.1           # widest tier; the largest opening stays under 2-3/8"
+    tree_pitch: float = 4.75
+    tree_stagger: float = 1.0
     gap_corner_radius: float = 1.5    # rounded top corners at the exit
     sill_fillet: float = 1.0          # rounded inside corners at the exit floor
 

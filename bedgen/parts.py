@@ -107,6 +107,27 @@ def flower(cx, cy, d, petals=8, rot=0.0, web=0.3):
     return affinity.translate(unary_union(shapes).buffer(-t, quad_segs=RES), cx, cy)
 
 
+def tree(cx, y0, h, w):
+    """Pine-tree cut-out: a trunk and three stacked tiers, `h` tall and `w` wide at the base."""
+    k = h / 6.5
+    trunk = rect(cx - 0.275 * k, y0, cx + 0.275 * k, y0 + 1.0 * k)
+    tiers = []
+    for yb, yt, bw in ((0.9, 3.4, 1.0), (2.6, 5.0, 0.82), (4.2, 6.5, 0.62)):
+        tiers.append(Polygon([(cx - bw * w / 2, y0 + yb * k), (cx + bw * w / 2, y0 + yb * k), (cx, y0 + yt * k)]))
+    # round the tips and tier corners so a round bit can cut them
+    return round_convex(unary_union([trunk] + tiers), 0.15)
+
+
+def trees_between(a, b, y0, y1, h, w, pitch, stagger, margin):
+    """A row of tree cut-outs across a..b, alternately raised by `stagger`."""
+    span = b - a - 2 * margin
+    n = int((span - w) // pitch) + 1
+    if n < 1 or y1 - y0 < h + stagger:
+        return []
+    start = a + margin + (span - (n - 1) * pitch) / 2
+    return [tree(start + i * pitch, y0 + (stagger if i % 2 else 0), h, w) for i in range(n)]
+
+
 def flowers_between(a, b, y0, y1, d, gap, margin, petals=8):
     """Evenly spaced flower cut-outs filling a..b, centred in the band y0..y1."""
     span = b - a - 2 * margin
