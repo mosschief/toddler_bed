@@ -128,58 +128,66 @@ def trees_between(a, b, y0, y1, h, w, pitch, stagger, margin):
     return [tree(start + i * pitch, y0 + (stagger if i % 2 else 0), h, w) for i in range(n)]
 
 
-def frond(cx, y0, h, lean=0.0, leaf_w=0.5, leaf_len=1.9, web=0.3, rib=0.2):
-    """Fern-frond cut-outs: a stem slot and curved capsule leaflets alternating up a
-    gently bent midrib, ending in a tip leaflet. Returns a list of separate holes.
+def _leaflet(pts, w):
+    """Oval leaflet along a polyline: widest in the middle, with ends round enough
+    (radius 0.33 w) for a bit up to 2/3 of the leaflet width."""
+    import numpy as np
+    n = len(pts)
+    discs = [Point(q).buffer(w / 2 * (0.66 + 0.34 * np.sin(np.pi * i / (n - 1))), quad_segs=RES)
+             for i, q in enumerate(pts)]
+    return unary_union([a.union(b).convex_hull for a, b in zip(discs, discs[1:])])
 
-    Every hole is at least `leaf_w` wide (round ends, so any bit up to that size
-    cuts it) and neighbouring holes keep at least `web` of wood between them.
-    """
+
+def frond(cx, y0, h, lean=0.0, leaf_w=0.4, leaf_len=2.1, web=0.25, rib=0.14, stem_t=0.15):
+    """Fern-frond cut-outs: a curved stem slot and oval leaflets alternating up a
+    gently bent midrib, longest near the bottom and shrinking to the tip.
+    Returns a list of separate holes, each at least `web` apart."""
     import numpy as np
 
     def mid(t):  # midrib point and unit tangent at fraction t of the height
         tan = np.array([2 * lean * t / h, 1.0])
         return np.array([cx + lean * t * t, y0 + t * h]), tan / np.linalg.norm(tan)
 
-    def capsule(pts):
-        return LineString(pts).buffer(leaf_w / 2, quad_segs=RES)
+    hook = 0.25 * (1 if lean >= 0 else -1)
+    sp = [mid(t)[0] + [hook * (1 - t / stem_t) ** 2, 0] for t in np.linspace(0, stem_t, 8)]
+    sp[0] = sp[0] + [0, leaf_w / 2]
+    stem = LineString(sp).buffer(leaf_w * 0.4, quad_segs=RES)
 
-    holes = [capsule([mid(0)[0] + [0, leaf_w / 2], mid(0.085)[0]])]
-    leaves, t, side = [], 0.15, 1
-    while t < 0.8:
-        frac = (t - 0.15) / 0.65
-        ang = np.radians(35 + 15 * frac)          # leaflets sweep up more toward the tip
-        L = leaf_len * (1 - 0.55 * frac)
+    def make(t, frac, side):
+        ang = np.radians(22 + 33 * frac)           # leaflets sweep up more toward the tip
+        L = max(leaf_len * (1 - frac) ** 0.75 * min(1.0, 0.7 + frac * 3), leaf_w * 1.3)
         p, tan = mid(t)
-        nrm = np.array([tan[1], -tan[0]]) * side  # away from the midrib
-        q = p + (nrm * np.cos(ang) + tan * np.sin(ang)) * (rib + leaf_w / 2)
+        nrm = np.array([tan[1], -tan[0]]) * side   # away from the midrib
+        q = p + (nrm * np.cos(ang) + tan * np.sin(ang)) * (rib + leaf_w * 0.33)
         pts = [q]
-        for k in range(8):                         # each leaflet curls 20 degrees upward
-            a = ang + np.radians(20) * (k + 0.5) / 8
-            q = q + (nrm * np.cos(a) + tan * np.sin(a)) * (L - leaf_w) / 8
+        for k in range(10):                         # each leaflet curls 12 degrees upward
+            a = ang + np.radians(12) * (k + 0.5) / 10
+            q = q + (nrm * np.cos(a) + tan * np.sin(a)) * (L - leaf_w * 0.66) / 10
             pts.append(q)
-        leaves.append(capsule(pts))
-        side = -side
-        # same-side neighbours sit two steps apart; keep `web` of wood between them
-        t += (leaf_w + web) / np.cos(ang + np.radians(12)) / 2 / h
-    holes += leaves
-    # tip leaflet: as long as it can be while keeping `web` from the others
-    top = mid(1.0)[0] - mid(1.0)[1] * (leaf_w / 2)
-    ts = t - 0.1
-    while ts < 0.97:
-        p, tan = mid(ts)
-        tip = capsule([p + tan * (leaf_w / 2), top])
-        if all(tip.distance(q) >= web for q in leaves):
-            holes.append(tip)
+        return _leaflet(pts, leaf_w)
+
+    leaves, side = [], 1
+    t0 = t = stem_t + 0.02
+    t1 = 0.93
+    while t < t1:
+        frac = (t - t0) / (t1 - t0)
+        leaf = make(t, frac, side)
+        # slide up until it clears the stem and the leaflets below it
+        while t < t1 and (leaf.distance(stem) < web or any(leaf.distance(o) < web for o in leaves[-3:])):
+            t += 0.004
+            leaf = make(t, frac, side)
+        if t >= t1:
             break
-        ts += 0.01
-    return holes
+        leaves.append(leaf)
+        side = -side
+        t += 0.006
+    return [stem] + leaves
 
 
-def fronds_between(a, b, y0, y1, h, pitch, margin, leaf_w=0.5, web=0.3, lean=0.35):
+def fronds_between(a, b, y0, y1, h, pitch, margin, leaf_w=0.4, web=0.25, lean=0.3):
     """A row of fern fronds across a..b, leaning alternately left and right."""
     span = b - a - 2 * margin
-    width = 3.7 * h / 8
+    width = 3.5 * h / 10.5
     n = int((span - width) // pitch) + 1
     if n < 1 or y1 - y0 < h:
         return []
@@ -187,7 +195,7 @@ def fronds_between(a, b, y0, y1, h, pitch, margin, leaf_w=0.5, web=0.3, lean=0.3
     out = []
     for i in range(n):
         out += frond(start + i * pitch, y0, h, lean=lean * (1 if i % 2 else -1), leaf_w=leaf_w,
-                     leaf_len=2.3 * h / 8, web=web)
+                     leaf_len=2.1 * h / 10.5, web=web)
     return out
 
 

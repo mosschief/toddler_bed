@@ -42,8 +42,8 @@ Each variant folder has:
   instead; their widest opening (the centre) is about 2", and the wood
   between petals is at least 0.3" wide. `rail_cutouts = "trees"` gives a
   staggered row of 7" pine trees (widest opening about 1 7/8"), and
-  `"ferns"` a row of 8" fern fronds made of 1/2" wide leaflets with at least
-  0.3" of wood between them.
+  `"ferns"` a row of 10 1/2" fern fronds: oval leaflets 0.4" wide with at
+  least 1/4" of wood between them, ends round enough for a 1/4" bit.
 - The panel is longer than the CNC bed, so it is cut as two pieces joined by a
   glued two-knob puzzle joint placed in the low sill under the exit. With a
   centred exit the halves are 33" and 32" long; with the side exit the long

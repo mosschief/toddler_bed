@@ -73,7 +73,7 @@ def front_panel(p: Params, rail_top, sill_bottom, sill_top, exit_x0, opening_top
     slots = []
     for a, b in spans:
         if p.rail_cutouts == "ferns":
-            slots += fronds_between(a, b, slot_y0, slot_y1, p.fern_height, p.fern_pitch, margin=1.5,
+            slots += fronds_between(a, b, p.fern_bottom, rail_top - 1.25, p.fern_height, p.fern_pitch, margin=1.5,
                                     leaf_w=p.fern_leaf_width, web=p.fern_web)
         elif p.rail_cutouts == "trees":
             slots += trees_between(a, b, slot_y0, slot_y1, p.tree_height, p.tree_width,
