@@ -18,10 +18,11 @@ Four variants are generated:
 | [`v2_center_exit`](output/v2_center_exit) | on the floor | centred; two near-equal panel halves | 2 |
 | [`v3_raised_drawers`](output/v3_raised_drawers) | on a deck over 2 small IKEA HEMNES underbed boxes | centred | 5 |
 
-**`v1e_side_exit_foot_box` is the chosen design**: one box at the foot end,
-lid flush with the rail top, straight slots. `v1f_side_exit_foot_box_trees` and
-`v1g_side_exit_foot_box_ferns` are the same bed with tree or fern cut-outs; the other `v1*` beds are earlier
-alternatives. All the `v1*` beds get the full CAD package:
+**`v1e_side_exit_foot_box` is the chosen design** (one box at the foot end,
+lid flush with the rail top, straight slots), and
+**`v1g_side_exit_foot_box_ferns` is the locked-in alternative**: the same bed
+with fern-frond cut-outs instead of slots. `v1f_side_exit_foot_box_trees` and
+the other `v1*` beds are earlier explorations. All the `v1*` beds get the full CAD package:
 
 - `<variant>.step`: 3D assembly (millimetres, one named solid per part) for Fusion 360, Onshape, FreeCAD etc.
 - `drawings.pdf`: 3D view, front view, plan, section through a box, exploded box, dimensioned part drawings, nesting, cut list, hardware and assembly steps
