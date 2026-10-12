@@ -105,9 +105,8 @@ def plan_and_section(v, path):
             ax1.add_patch(MplPolygon([(lo[0], lo[1]), (hi[0], lo[1]), (hi[0], hi[1]), (lo[0], hi[1])],
                                      fc=part.color, ec="#5a4a32", lw=0.6))
     _dim(ax1, (0, 0), (L, 0), f"nook {fmt(L)}", -4)
-    _dim(ax1, (0, T + D), (bw, T + D), fmt(bw), 2.5)
-    if not p.single_box:
-        _dim(ax1, (L - fbw, T + D), (L, T + D), fmt(fbw), 2.5)
+    for x0, w, _ in p.box_spans:
+        _dim(ax1, (x0, T + D), (x0 + w, T + D), fmt(w), 2.5)
     _dim(ax1, (bw, T + D), (L - fbw, T + D), f"mattress opening {fmt(L - bw - fbw)}", 2.5)
     _dim(ax1, (L, 0), (L, T + D), f"overall depth {fmt(T + D)}", -3)
     ex0, ex1 = h["exit"]
@@ -129,7 +128,7 @@ def plan_and_section(v, path):
     ax2.add_patch(MplPolygon([(T + p.lid_gap, side_h), (T + p.lid_gap + lid_d, side_h),
                               (T + p.lid_gap + lid_d, side_h + T), (T + p.lid_gap, side_h + T)],
                              fc=lid.color, ec="#5a4a32", lw=0.8))
-    ax2.text(T + D / 2, side_h + T + 0.5, "one-piece lid, hinged along the wall side (behind)", ha="center",
+    ax2.text(T + D / 2, max(side_h + T, front) + 1.6, "one-piece lid, hinged along the wall side (behind)", ha="center",
              fontsize=7, color="#c0392b")
     ax2.text(T + D / 2, side_h - p.hand_notch[1] - 0.6, "hand cut-out", ha="center", fontsize=7, color="#555")
     ax2.add_patch(MplPolygon([(T + D, -1), (T + D + 1, -1), (T + D + 1, front + 3), (T + D, front + 3)],
@@ -143,16 +142,16 @@ def plan_and_section(v, path):
     ax2.text(T + D - 0.2, front + 1.2, "wall", fontsize=7, color="#555", ha="right")
     ax2.set_xlim(-6, T + D + 8)
     ax2.set_ylim(-4, front + 4)
-    ax2.set_title("Head box seen from the mattress", fontsize=11)
+    ax2.set_title("Box seen from the mattress", fontsize=11)
     fig.tight_layout()
     fig.savefig(path, dpi=130)
     plt.close(fig)
 
 
 def exploded_box(v, path):
-    """Head box pulled apart so the tab-and-slot joints are visible."""
+    """First box pulled apart so the tab-and-slot joints are visible."""
     p = v.params
-    bw = p.head_box_width
+    x0, bw, sgn = p.box_spans[0]
     offsets = {"Box side (wall)": (-5, 0, 0), "Box side (mattress)": (5, 0, 0), "Box back": (0, 6, 0),
                "Box front": (0, -8, 0), "Box floor": (0, -3, 0), "Box lid": (0, 0, 6)}
     parts = []
@@ -162,12 +161,13 @@ def exploded_box(v, path):
         q = copy.copy(part)
         q.placements = []
         for pl in part.placements:
-            if pl.origin[0] > bw:
-                continue  # head box only
-            off = offsets[part.name]
+            if not x0 - 0.01 <= pl.origin[0] <= x0 + bw + 0.01:
+                continue  # one box only
+            off = np.array(offsets[part.name], float) * (sgn, 1, 1) - (x0, 0, 0)  # move it to x = 0
             q.placements.append(Placement(tuple(np.add(pl.origin, off)), pl.u, pl.v, pl.n))
         parts.append(q)
-    _render_parts(v, parts, path, "Head box, exploded (tabs pass through the sides)")
+    name = "Head box" if sgn > 0 else "Foot box"
+    _render_parts(v, parts, path, f"{name}, exploded (tabs pass through the sides)", bw)
 
 
 def dogbone_detail(v, path):
@@ -233,10 +233,10 @@ def dogbone_detail(v, path):
     plt.close(fig)
 
 
-def _render_parts(v, parts, path, title):
+def _render_parts(v, parts, path, title, width):
     vv = copy.copy(v)
     vv.params = copy.copy(v.params)
-    vv.params.nook_width = v.params.head_box_width  # shrink the backdrop to the box
+    vv.params.nook_width = width  # shrink the backdrop to the box
     render_iso(vv, path, view=(0.9, 1.0, -0.7), parts=parts, title=title)
 
 
@@ -283,26 +283,28 @@ def assembly_text(p):
     if not p.single_box:
         return ASSEMBLY.format(inserts=8)
     text = ASSEMBLY.format(inserts=6)
-    text = text.replace("3. Boxes: glue", "3. Head box: glue")
+    box, end = p.boxes, p.liner_end
+    text = text.replace("3. Boxes: glue", f"3. {box.capitalize()} box: glue")
     text = text.replace("""   front edges), so it sits tight against the panel when the sides are in their grooves.""",
-                        """   front edges), so it sits tight against the panel when the sides are in their grooves.
-   Glue + screw (2 x 1-1/4") the foot block to the mattress-side face of the foot wall liner, above
+                        f"""   front edges), so it sits tight against the panel when the sides are in their grooves.
+   Glue + screw (2 x 1-1/4") the {end} block to the mattress-side face of the {end} wall liner, above
    the mattress, its face 3/8" back from the liner's front edge in the same way.""")
     text = text.replace("""6. Set both boxes in the nook, tight to the side walls. Shim level, then screw through each box back
    into a stud (2-1/2" screws, 2 per box). The 3/4" behind the back lets you scribe the sides.""",
-                        """6. Set the head box in the nook, tight to the head wall. Shim level, then screw through the box
-   back into a stud (2-1/2" screws, 2). Screw the foot wall liner to the foot wall studs (3 screws),
+                        f"""6. Set the {box} box in the nook, tight to the {box} wall. Shim level, then screw through the box
+   back into a stud (2-1/2" screws, 2). Screw the {end} wall liner to the {end} wall studs (3 screws),
    its front edge 3/8" proud of where the panel back will be. Scribe both to the walls as needed.""")
-    text = text.replace("each box side drops into its groove", "the box sides and the foot liner drop into their grooves")
-    text = text.replace("Reach in through each lid and bolt", "Reach in through the lid (and over the mattress at the foot) and bolt")
-    text = text.replace("bolt the box fronts to the inserts", "bolt the box front and the foot block to the inserts")
+    text = text.replace("each box side drops into its groove", f"the box sides and the {end} liner drop into their grooves")
+    text = text.replace("Reach in through each lid and bolt", f"Reach in through the lid (and over the mattress at the {end}) and bolt")
+    text = text.replace("bolt the box fronts to the inserts", f"bolt the box front and the {end} block to the inserts")
     return text.replace("Hang each lid", "Hang the lid")
 
 
 def hardware_text(p):
     if p.single_box:
-        return HARDWARE.format(box_screws=14, foot_screws=" + foot block", foot_bolts=" and foot block",
-                               inserts=6, stud_screws=5, stud_what="box back and foot liner", boxes=1)
+        end = p.liner_end
+        return HARDWARE.format(box_screws=14, foot_screws=f" + {end} block", foot_bolts=f" and {end} block",
+                               inserts=6, stud_screws=5, stud_what=f"box back and {end} liner", boxes=1)
     return HARDWARE.format(box_screws=24, foot_screws="", foot_bolts="", inserts=8, stud_screws=4,
                            stud_what="box backs", boxes=2)
 

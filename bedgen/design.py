@@ -101,7 +101,7 @@ def storage_boxes(p: Params, box_top, ledger_z=None, open_lid_deg=0.0):
     its long wall-side edge, so it opens toward the mattress. The mattress-side panel has a
     hand cut-out in its top edge for lifting the lid.
     """
-    T, D, bw, L = p.T, p.depth, p.head_box_width, p.nook_width
+    T, D, bw, L = p.T, p.depth, p.box_spans[0][1], p.nook_width
     side_h = box_top - T
     inner_w = bw - 2 * T
     back_u0 = D - p.back_inset - T        # back panel front face, side-local depth
@@ -179,10 +179,10 @@ def storage_boxes(p: Params, box_top, ledger_z=None, open_lid_deg=0.0):
         front.bolts += [(x0 + T + x, z) for x in bolt_xs for z in bolt_zs]
         bottom.placements.append(place((x0 + T, 2 * T, p.bottom_lift), X, Y, Z))
         wall_edge = 0 if sgn > 0 else L
-        if open_lid_deg and sgn > 0:
+        if open_lid_deg and (sgn > 0 or len(p.box_spans) == 1):
             # pivot on the top outer edge; the lid stands up against the wall
-            u = np.array([np.cos(th), 0, np.sin(th)])
-            nrm = np.array([-np.sin(th), 0, np.cos(th)])
+            u = np.array([sgn * np.cos(th), 0, np.sin(th)])
+            nrm = np.array([-sgn * np.sin(th), 0, np.cos(th)])
             origin = np.array([wall_edge, T + g, side_h + T]) - T * nrm
             lid.placements.append(place(origin, tuple(u), Y, tuple(nrm)))
         else:
@@ -192,21 +192,25 @@ def storage_boxes(p: Params, box_top, ledger_z=None, open_lid_deg=0.0):
     parts += [side, face, back, front, bottom, lid]
 
     if p.single_box:
-        # no foot box: a liner board on the foot wall sits in the panel groove,
+        # no box at one end: a liner board on that wall sits in the panel groove,
         # and a block above the mattress bolts the panel to it
+        end = p.liner_end.capitalize()
+        at_foot = p.liner_end == "foot"
+        lx = L - T if at_foot else 0.0
         cw, cz1 = 1.5, side_h - 0.5
         # top flush with the box lid; the tongue in the panel groove stops at side_h
         liner_shape = unary_union([rect(gd, 0, D + gd, side_h + T), rect(0, 0, gd + 0.01, side_h)])
-        liner = Part("Foot wall liner", liner_shape, color=WOOD_DARK,
-                     note="screw to the foot wall studs; runs into the panel groove")
-        liner.placements.append(place((L - T, T - gd, 0), Y, Z, X))
+        liner = Part(f"{end} wall liner", liner_shape, color=WOOD_DARK,
+                     note=f"screw to the {p.liner_end} wall studs; runs into the panel groove")
+        liner.placements.append(place((lx, T - gd, 0), Y, Z, X))
         fz0 = p.mattress_thickness + 0.5
         fzs = [fz0 + (cz1 - fz0) * f for f in (0.25, 0.75)]
-        foot_cleat = Part("Foot block", rect(0, 0, cw, cz1 - fz0).difference(unary_union(
+        foot_cleat = Part(f"{end} block", rect(0, 0, cw, cz1 - fz0).difference(unary_union(
             [Point(cw / 2, z - fz0).buffer(p.bolt_hole / 2, quad_segs=12) for z in fzs])),
             color=WOOD_DARK, note="above the mattress; glue + 2 screws to the liner, 2 bolts into the panel")
-        foot_cleat.placements.append(place((L - T - cw, 2 * T, fz0), X, Z, NY))
-        foot_cleat.bolts = [(L - T - cw / 2, z) for z in fzs]
+        bx = L - T - cw if at_foot else T
+        foot_cleat.placements.append(place((bx, 2 * T, fz0), X, Z, NY))
+        foot_cleat.bolts = [(bx + cw / 2, z) for z in fzs]
         parts += [liner, foot_cleat]
 
     if ledger_z is not None:
@@ -220,12 +224,12 @@ def storage_boxes(p: Params, box_top, ledger_z=None, open_lid_deg=0.0):
 
 def add_panel_joinery(p: Params, panels, box_parts, box_top):
     """Grooves (dog-boned, open at the bottom) for every box side, and insert
-    holes for the box-front and foot-block bolts, pocketed into the back of the front panel."""
+    holes for the box-front and liner-block bolts, pocketed into the back of the front panel."""
     T, L, c = p.T, p.nook_width, p.tab_clearance
     side_h = box_top - T
     side_xs = [x for x0, w, _ in p.box_spans for x in (x0, x0 + w - T)]
     if p.single_box:
-        side_xs.append(L - T)  # foot wall liner
+        side_xs.append(L - T if p.liner_end == "foot" else 0.0)  # wall liner
     grooves = [slot_with_dogbones(x - c, -2, x + T + c, side_h + c, p.bit_diameter) for x in side_xs]
     bolts = [b for q in box_parts for b in getattr(q, "bolts", [])]
     holes = [Point(x, z).buffer(p.insert_hole / 2, quad_segs=12) for x, z in bolts]
@@ -324,6 +328,18 @@ def side_exit_one_box_flowers(p: Params):
         p.side_exit_start, j)
 
 
+def side_exit_foot_box(p: Params):
+    p = replace(p, boxes="foot", lid_below_rail=0.0)
+    # the exit moves toward the head to clear the box, keeping a short post before it
+    ex0 = p.nook_width - p.foot_box_width - p.exit_post - p.exit_width
+    j = ex0 + p.exit_width * 0.375
+    return _floor_variant(
+        p, "v1e_side_exit_foot_box", "Floor bed, side exit, box at the foot",
+        "The flush-top one-box bed with the box moved to the foot end and the mattress "
+        "against the head wall; the exit sits just before the box.",
+        ex0, j)
+
+
 def center_exit(p: Params):
     ex0 = p.nook_width / 2 - p.exit_width / 2
     return _floor_variant(
@@ -420,4 +436,4 @@ def _shift_to_origin(part):
 
 
 def build_all(p: Params):
-    return [side_exit(p), side_exit_one_box(p), side_exit_one_box_flush(p), side_exit_one_box_flowers(p), center_exit(p), raised_drawers(p)]
+    return [side_exit(p), side_exit_one_box(p), side_exit_one_box_flush(p), side_exit_one_box_flowers(p), side_exit_foot_box(p), center_exit(p), raised_drawers(p)]

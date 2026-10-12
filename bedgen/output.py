@@ -164,9 +164,9 @@ def cut_list_md(v, sheets):
               f"exit sill {fmt(h['sill_top'])}",
               f"- **Exit opening:** {fmt(h['exit'][0])} to {fmt(h['exit'][1])} from the head wall; "
               f"panel halves join at {fmt(h['joint_x'])}",
-              (f"- **Head box:** {fmt(p.head_box_width)} wide outside, "
-               f"{fmt(p.head_box_width - 2 * p.T)} inside, {fmt(p.depth)} deep; no foot box "
-               f"(mattress against a liner on the foot wall)" if p.single_box else
+              (f"- **{p.boxes.capitalize()} box:** {fmt(p.single_box_width)} wide outside, "
+               f"{fmt(p.single_box_width - 2 * p.T)} inside, {fmt(p.depth)} deep; no {p.liner_end} box "
+               f"(mattress against a liner on the {p.liner_end} wall)" if p.single_box else
                f"- **Head/foot boxes:** {fmt(p.box_width)} wide outside, "
                f"{fmt(p.box_width - 2 * p.T)} inside, {fmt(p.depth)} deep"), ""]
     return "\n".join(lines)
