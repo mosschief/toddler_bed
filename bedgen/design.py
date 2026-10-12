@@ -12,7 +12,7 @@ from shapely.geometry import Point
 from shapely.ops import unary_union
 
 from .params import Params
-from .parts import (NX, NY, X, Y, Z, Part, h_stadium, place, rect, round_concave,
+from .parts import (NX, NY, X, Y, Z, Part, flowers_between, h_stadium, place, rect, round_concave,
                     round_convex, slot_with_dogbones, slots_between, split_with_puzzle,
                     tab_centres)
 
@@ -72,7 +72,11 @@ def front_panel(p: Params, rail_top, sill_bottom, sill_top, exit_x0, opening_top
     spans = [(hbw, ex0), (ex1, L - fbw)]
     slots = []
     for a, b in spans:
-        slots += slots_between(a, b, slot_y0, slot_y1, p.slot_width, p.slat_width, margin=1.5)
+        if p.rail_cutouts == "flowers":
+            slots += flowers_between(a, b, slot_y0, slot_y1, p.flower_diameter, p.flower_gap,
+                                     margin=1.5, petals=p.flower_petals)
+        else:
+            slots += slots_between(a, b, slot_y0, slot_y1, p.slot_width, p.slat_width, margin=1.5)
     if slots:
         panel = panel.difference(unary_union(slots))
     return panel, (ex0, ex1)
@@ -311,6 +315,15 @@ def side_exit_one_box_flush(p: Params):
         p.side_exit_start, j)
 
 
+def side_exit_one_box_flowers(p: Params):
+    p = replace(p, boxes="head", lid_below_rail=0.0, rail_cutouts="flowers")
+    j = p.side_exit_start + p.exit_width * 0.375
+    return _floor_variant(
+        p, "v1d_side_exit_one_box_flowers", "Floor bed, side exit, one box, flowers",
+        "The flush-top one-box bed with flower cut-outs in the rail instead of slots.",
+        p.side_exit_start, j)
+
+
 def center_exit(p: Params):
     ex0 = p.nook_width / 2 - p.exit_width / 2
     return _floor_variant(
@@ -407,4 +420,4 @@ def _shift_to_origin(part):
 
 
 def build_all(p: Params):
-    return [side_exit(p), side_exit_one_box(p), side_exit_one_box_flush(p), center_exit(p), raised_drawers(p)]
+    return [side_exit(p), side_exit_one_box(p), side_exit_one_box_flush(p), side_exit_one_box_flowers(p), center_exit(p), raised_drawers(p)]

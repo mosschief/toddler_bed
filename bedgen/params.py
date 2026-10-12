@@ -32,6 +32,10 @@ class Params:
     slat_width: float = 1.75
     top_rail: float = 2.0             # solid band above the slots
     slot_gap_above_sill: float = 0.0  # slot bottoms vs the exit floor line
+    rail_cutouts: str = "slots"       # "slots" or "flowers"
+    flower_diameter: float = 6.75     # tip to tip; 6 3/4" keeps the widest opening under 2-3/8"
+    flower_gap: float = 1.5           # solid wood between neighbouring flowers
+    flower_petals: float = 8
     gap_corner_radius: float = 1.5    # rounded top corners at the exit
     sill_fillet: float = 1.0          # rounded inside corners at the exit floor
 

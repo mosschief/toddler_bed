@@ -91,6 +91,34 @@ def slots_between(a, b, y0, y1, slot_w, slat_w, margin, min_slots=3):
     return [stadium(start + i * (slot_w + slat_w), y0, y1, slot_w) for i in range(n)]
 
 
+def flower(cx, cy, d, petals=8, rot=0.0, web=0.3):
+    """Daisy-shaped cut-out, `d` across the petal tips: tapered petals round a centre disc.
+
+    The petals narrow toward the centre so neighbours never touch, and the
+    outline is shrunk by web/2 so the wood between petals is at least `web` wide.
+    """
+    from shapely import affinity
+    t = web / 2
+    R = d / 2 + t
+    petal = unary_union([Point(0.35 * R, 0).buffer(0.1 * R, quad_segs=RES * 2),
+                         Point(0.74 * R, 0).buffer(0.26 * R, quad_segs=RES * 4)]).convex_hull
+    shapes = [affinity.rotate(petal, rot + 360 * k / petals, origin=(0, 0)) for k in range(int(petals))]
+    shapes.append(Point(0, 0).buffer(0.33 * R, quad_segs=RES * 4))
+    return affinity.translate(unary_union(shapes).buffer(-t, quad_segs=RES), cx, cy)
+
+
+def flowers_between(a, b, y0, y1, d, gap, margin, petals=8):
+    """Evenly spaced flower cut-outs filling a..b, centred in the band y0..y1."""
+    span = b - a - 2 * margin
+    n = int((span + gap) // (d + gap))
+    if n < 1 or y1 - y0 < d:
+        return []
+    used = n * d + (n - 1) * gap
+    start = a + margin + (span - used) / 2 + d / 2
+    cy = (y0 + y1) / 2
+    return [flower(start + i * (d + gap), cy, d, petals) for i in range(n)]
+
+
 def puzzle_knob(x, y, p, direction=1):
     """Round 'jigsaw' knob whose base sits on the vertical line at x, pointing +x."""
     r, neck, reach = p.knob_radius, p.knob_neck, p.knob_reach

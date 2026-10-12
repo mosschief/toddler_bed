@@ -35,7 +35,8 @@ def main():
             ap.error(f"unknown parameter {name}")
         setattr(p, name, value if fields[name].type in (str, "str") else float(value))
 
-    full = set(args.full or ["v1_side_exit", "v1b_side_exit_one_box", "v1c_side_exit_one_box_flush"])
+    full = set(args.full or ["v1_side_exit", "v1b_side_exit_one_box", "v1c_side_exit_one_box_flush",
+                         "v1d_side_exit_one_box_flowers"])
     sections = []
     for v in build_all(p):
         outdir = os.path.join(args.out, v.key)
