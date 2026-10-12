@@ -130,19 +130,20 @@ def trees_between(a, b, y0, y1, h, w, pitch, stagger, margin):
 
 def _leaflet(pts, w):
     """Oval leaflet along a polyline: widest in the middle, with ends round enough
-    (radius 0.33 w) for a bit up to 2/3 of the leaflet width."""
+    (radius 0.4 w) for a bit up to 4/5 of the leaflet width."""
     import numpy as np
     n = len(pts)
-    discs = [Point(q).buffer(w / 2 * (0.66 + 0.34 * np.sin(np.pi * i / (n - 1))), quad_segs=RES)
+    discs = [Point(q).buffer(w / 2 * (0.8 + 0.2 * np.sin(np.pi * i / (n - 1))), quad_segs=RES)
              for i, q in enumerate(pts)]
     return unary_union([a.union(b).convex_hull for a, b in zip(discs, discs[1:])])
 
 
-def frond(cx, y0, h, curl=0.0, leaf_w=0.4, leaf_len=2.1, web=0.25, rib=0.14, stem_t=0.15):
+def frond(cx, y0, h, curl=0.0, leaf_w=0.55, leaf_len=3.0, web=0.25, rib=0.14, stem_t=0.15, avoid=None):
     """Fern-frond cut-outs: a curved stem slot and oblong, curved leaflets alternating
     up a midrib whose tip curls sideways by `curl` (inches, + right / - left), ending
     in a long tip leaflet that follows the curl. Returns a list of separate holes,
-    each at least `web` apart."""
+    each at least `web` apart (and from the shapes in `avoid`, e.g. a neighbouring frond;
+    leaflets that would come too close are shortened)."""
     import numpy as np
 
     def mid(t):  # midrib point and unit tangent at fraction t of the height
@@ -155,16 +156,16 @@ def frond(cx, y0, h, curl=0.0, leaf_w=0.4, leaf_len=2.1, web=0.25, rib=0.14, ste
     stem = LineString(sp).buffer(leaf_w * 0.4, quad_segs=RES)
     min_len = 2.6 * leaf_w                          # keep every leaflet oblong
 
-    def make(t, frac, side):
-        ang = np.radians(22 + 30 * frac)           # leaflets sweep up more toward the tip
-        L = max(leaf_len * (1 - frac) ** 0.6 * min(1.0, 0.7 + frac * 3), min_len)
+    def make(t, frac, side, scale=1.0):
+        ang = np.radians(18 + 32 * frac)           # leaflets sweep up more toward the tip
+        L = max(scale * leaf_len * (1 - frac) ** 0.6 * min(1.0, 0.7 + frac * 3), min_len)
         p, tan = mid(t)
         nrm = np.array([tan[1], -tan[0]]) * side   # away from the midrib
-        q = p + (nrm * np.cos(ang) + tan * np.sin(ang)) * (rib + leaf_w * 0.33)
+        q = p + (nrm * np.cos(ang) + tan * np.sin(ang)) * (rib + leaf_w * 0.4)
         pts = [q]
         for k in range(12):                         # each leaflet curves 30 degrees upward
             a = ang + np.radians(30) * (k + 0.5) / 12
-            q = q + (nrm * np.cos(a) + tan * np.sin(a)) * (L - leaf_w * 0.66) / 12
+            q = q + (nrm * np.cos(a) + tan * np.sin(a)) * (L - leaf_w * 0.8) / 12
             pts.append(q)
         return _leaflet(pts, leaf_w)
 
@@ -180,6 +181,13 @@ def frond(cx, y0, h, curl=0.0, leaf_w=0.4, leaf_len=2.1, web=0.25, rib=0.14, ste
             leaf = make(t, frac, side)
         if t >= t1:
             break
+        scale = 1.0
+        while avoid is not None and leaf.distance(avoid) < web and scale > 0.3:
+            scale -= 0.05
+            leaf = make(t, frac, side, scale)
+        if avoid is not None and leaf.distance(avoid) < web:
+            side = -side
+            continue
         leaves.append(leaf)
         side = -side
         t += 0.006
@@ -187,17 +195,17 @@ def frond(cx, y0, h, curl=0.0, leaf_w=0.4, leaf_len=2.1, web=0.25, rib=0.14, ste
     ts = t - 0.12
     while ts < 0.9:
         tip = _leaflet([mid(u)[0] for u in np.linspace(ts, 1.0, 12)], leaf_w)
-        if all(tip.distance(o) >= web for o in leaves[-4:]):
+        if all(tip.distance(o) >= web for o in leaves[-4:]) and (avoid is None or tip.distance(avoid) >= web):
             leaves.append(tip)
             break
         ts += 0.005
     return [stem] + leaves
 
 
-def fronds_between(a, b, y0, y1, h, pitch, margin, leaf_w=0.4, web=0.25, curl=1.5):
+def fronds_between(a, b, y0, y1, h, pitch, margin, leaf_w=0.55, web=0.25, curl=1.5):
     """A row of fern fronds across a..b whose tips curl alternately left and right."""
     span = b - a - 2 * margin
-    width = 3.5 * h / 10.5
+    width = 5.2 * h / 10.75
     n = int((span - width) // pitch) + 1
     if n < 1 or y1 - y0 < h:
         return []
@@ -205,7 +213,7 @@ def fronds_between(a, b, y0, y1, h, pitch, margin, leaf_w=0.4, web=0.25, curl=1.
     out = []
     for i in range(n):
         out += frond(start + i * pitch, y0, h, curl=curl * (1 if i % 2 else -1), leaf_w=leaf_w,
-                     leaf_len=2.1 * h / 10.5, web=web)
+                     leaf_len=3.0 * h / 10.75, web=web, avoid=unary_union(out) if out else None)
     return out
 
 
