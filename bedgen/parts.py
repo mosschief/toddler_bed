@@ -206,8 +206,47 @@ def frond(cx, y0, h, curl=0.0, leaf_w=0.75, leaf_len=2.3, web=0.25, rib=0.14, st
     return [stem] + leaves
 
 
-def fronds_between(a, b, y0, y1, h, pitch, margin, leaf_w=0.75, web=0.25, curl=1.5):
-    """A row of fern fronds across a..b whose tips curl alternately left and right."""
+def fiddlehead(cx, y0, h, direction=1, w=0.32, coil_r=0.85, turns=1.1, web=0.25):
+    """Curly grass: a slender stalk rising from a small tuft of blades and rolling
+    into a spiral at the top (a fern fiddlehead). The stalk and coil are one slot
+    `w` wide, cut by a 1/4" bit; the coil's turns keep `web` of wood between them.
+    `direction` +1 coils to the right, -1 to the left. Returns a list of holes."""
+    import numpy as np
+    d = 1 if direction >= 0 else -1
+    top = y0 + h - w / 2
+    c = np.array([cx + d * coil_r, top - coil_r])       # coil centre
+    base = y0 + 0.35
+    # stalk: gentle S-curve from the tuft up to the outside of the coil
+    ys = np.linspace(base, c[1], 24)
+    u = (ys - base) / (c[1] - base)
+    stalk = [np.array([cx - d * 0.18 * np.sin(np.pi * u_), y]) for u_, y in zip(u, ys)]
+    # Archimedean coil, shrinking inward so neighbouring turns stay `web` apart
+    b = (w + web) / (2 * np.pi)
+    coil = []
+    for phi in np.linspace(0, 2 * np.pi * turns, 80):
+        th = np.pi - d * phi if d > 0 else d * phi
+        rr = coil_r - b * phi
+        coil.append(c + rr * np.array([np.cos(np.pi - phi), np.sin(np.pi - phi)]) * np.array([d, 1]))
+    holes = [LineString(stalk + coil[1:]).buffer(w / 2, quad_segs=RES)]
+    # tuft: short curved blades fanning out on both sides of the stalk foot
+    for side in (-1, 1):
+        for off, length, lean in ((0.6, 1.0, 18), (1.15, 0.7, 38)):
+            p0 = np.array([cx + side * off, y0 + w / 2])
+            pts, q = [p0], p0.copy()
+            for k in range(8):
+                a_ = np.radians(90 - side * (lean + 25 * k / 8))
+                q = q + np.array([np.cos(a_), np.sin(a_)]) * length / 8
+                pts.append(q)
+            blade = LineString(pts).buffer(w / 2, quad_segs=RES)
+            if all(blade.distance(o) >= web for o in holes):
+                holes.append(blade)
+    return holes
+
+
+def fronds_between(a, b, y0, y1, h, pitch, margin, leaf_w=0.75, web=0.25, curl=1.5, fiddleheads=False):
+    """A row of fern fronds across a..b whose tips curl alternately left and right.
+    With `fiddleheads`, curly grass stalks stand in the gaps where neighbouring
+    tips curl apart, and frond leaflets near them are shortened to keep clear."""
     span = b - a - 2 * margin
     width = 5.0 * h / 10.75
     n = int((span - width) // pitch) + 1
@@ -215,6 +254,11 @@ def fronds_between(a, b, y0, y1, h, pitch, margin, leaf_w=0.75, web=0.25, curl=1
         return []
     start = a + margin + (span - (n - 1) * pitch) / 2
     out = []
+    if fiddleheads:
+        # frond i curls left when i is even, so gaps 0-1, 2-3, ... open up at the top
+        for i in range(0, n - 1, 2):
+            gx = start + (i + 0.5) * pitch
+            out += fiddlehead(gx - 0.0, y0, h, direction=1 if (i // 2) % 2 else -1, web=web)
     for i in range(n):
         out += frond(start + i * pitch, y0, h, curl=curl * (1 if i % 2 else -1), leaf_w=leaf_w,
                      leaf_len=2.7 * h / 10.75, web=web, avoid=unary_union(out) if out else None)

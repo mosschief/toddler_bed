@@ -38,7 +38,8 @@ def main():
     full = set(args.full or ["v1_side_exit", "v1b_side_exit_one_box", "v1c_side_exit_one_box_flush",
                          "v1d_side_exit_one_box_flowers", "v1e_side_exit_foot_box",
                          "v1f_side_exit_foot_box_trees",
-                         "v1g_side_exit_foot_box_ferns"])
+                         "v1g_side_exit_foot_box_ferns",
+                         "v1h_side_exit_foot_box_fiddleheads"])
     sections = []
     for v in build_all(p):
         outdir = os.path.join(args.out, v.key)

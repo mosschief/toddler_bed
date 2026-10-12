@@ -15,13 +15,15 @@ Four variants are generated:
 | [`v1e_side_exit_foot_box`](output/v1e_side_exit_foot_box) | on the floor, against the head wall | as v1c, with the box at the foot end and the exit moved to 35"-51" | 2 |
 | [`v1f_side_exit_foot_box_trees`](output/v1f_side_exit_foot_box_trees) | on the floor, against the head wall | as v1e, with a staggered row of pine-tree cut-outs instead of slots | 2 |
 | [`v1g_side_exit_foot_box_ferns`](output/v1g_side_exit_foot_box_ferns) | on the floor, against the head wall | as v1e, with fern-frond cut-outs instead of slots | 2 |
+| [`v1h_side_exit_foot_box_fiddleheads`](output/v1h_side_exit_foot_box_fiddleheads) | on the floor, against the head wall | as v1g, plus curly fiddlehead stalks and grass tufts between the fronds | 2 |
 | [`v2_center_exit`](output/v2_center_exit) | on the floor | centred; two near-equal panel halves | 2 |
 | [`v3_raised_drawers`](output/v3_raised_drawers) | on a deck over 2 small IKEA HEMNES underbed boxes | centred | 5 |
 
 **`v1e_side_exit_foot_box` is the chosen design** (one box at the foot end,
 lid flush with the rail top, straight slots), and
 **`v1g_side_exit_foot_box_ferns` is the locked-in alternative**: the same bed
-with fern-frond cut-outs instead of slots. `v1f_side_exit_foot_box_trees` and
+with fern-frond cut-outs instead of slots. `v1h_side_exit_foot_box_fiddleheads`
+adds curly grass to the ferns (being explored). `v1f_side_exit_foot_box_trees` and
 the other `v1*` beds are earlier explorations. All the `v1*` beds get the full CAD package:
 
 - `<variant>.step`: 3D assembly (millimetres, one named solid per part) for Fusion 360, Onshape, FreeCAD etc.
