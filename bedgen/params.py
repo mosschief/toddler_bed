@@ -51,6 +51,10 @@ class Params:
     insert_hole: float = 0.375        # pilot for 1/4-20 threaded inserts; size to your inserts
     insert_depth: float = 0.5         # leaves 1/4" of face over the insert
 
+    # "both" = head and foot boxes; "head" = one wider box at the head end, with
+    # the mattress against the foot wall (a wall liner anchors the panel there)
+    boxes: str = "both"
+
     # Variant 1 (side exit, like the reference photo): exit start from head wall
     side_exit_start: float = 38.0
 
@@ -83,6 +87,29 @@ class Params:
     @property
     def box_width(self):
         return (self.nook_width - self.zone_length) / 2
+
+    @property
+    def single_box(self):
+        return self.boxes == "head"
+
+    @property
+    def head_box_width(self):
+        if self.single_box:
+            return self.nook_width - self.zone_length - self.T
+        return self.box_width
+
+    @property
+    def foot_box_width(self):
+        """Width taken at the foot end: a box, or just the wall liner."""
+        return self.T if self.single_box else self.box_width
+
+    @property
+    def box_spans(self):
+        """(x0, width, direction) of each box; direction points away from its wall."""
+        spans = [(0.0, self.head_box_width, 1)]
+        if not self.single_box:
+            spans.append((self.nook_width - self.box_width, self.box_width, -1))
+        return spans
 
     @property
     def depth(self):

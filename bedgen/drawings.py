@@ -78,7 +78,7 @@ def part_drawings(v, path):
 
 def plan_and_section(v, path):
     p, h = v.params, v.heights
-    T, D, L, bw = p.T, p.depth, p.nook_width, p.box_width
+    T, D, L, bw, fbw = p.T, p.depth, p.nook_width, p.head_box_width, p.foot_box_width
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6), gridspec_kw=dict(width_ratios=[2.3, 1]))
 
     # ---- plan (looking down; front of bed at the bottom)
@@ -106,8 +106,9 @@ def plan_and_section(v, path):
                                      fc=part.color, ec="#5a4a32", lw=0.6))
     _dim(ax1, (0, 0), (L, 0), f"nook {fmt(L)}", -4)
     _dim(ax1, (0, T + D), (bw, T + D), fmt(bw), 2.5)
-    _dim(ax1, (L - bw, T + D), (L, T + D), fmt(bw), 2.5)
-    _dim(ax1, (bw, T + D), (L - bw, T + D), f"mattress opening {fmt(L - 2 * bw)}", 2.5)
+    if not p.single_box:
+        _dim(ax1, (L - fbw, T + D), (L, T + D), fmt(fbw), 2.5)
+    _dim(ax1, (bw, T + D), (L - fbw, T + D), f"mattress opening {fmt(L - bw - fbw)}", 2.5)
     _dim(ax1, (L, 0), (L, T + D), f"overall depth {fmt(T + D)}", -3)
     ex0, ex1 = h["exit"]
     _dim(ax1, (ex0, 0), (ex1, 0), f"exit {fmt(ex1 - ex0)}", -1.5)
@@ -151,7 +152,7 @@ def plan_and_section(v, path):
 def exploded_box(v, path):
     """Head box pulled apart so the tab-and-slot joints are visible."""
     p = v.params
-    bw = p.box_width
+    bw = p.head_box_width
     offsets = {"Box side (wall)": (-5, 0, 0), "Box side (mattress)": (5, 0, 0), "Box back": (0, 6, 0),
                "Box front": (0, -8, 0), "Box floor": (0, -3, 0), "Box lid": (0, 0, 6)}
     parts = []
@@ -235,7 +236,7 @@ def dogbone_detail(v, path):
 def _render_parts(v, parts, path, title):
     vv = copy.copy(v)
     vv.params = copy.copy(v.params)
-    vv.params.nook_width = v.params.box_width  # shrink the backdrop to the box
+    vv.params.nook_width = v.params.head_box_width  # shrink the backdrop to the box
     render_iso(vv, path, view=(0.9, 1.0, -0.7), parts=parts, title=title)
 
 
@@ -254,7 +255,7 @@ ASSEMBLY = """
 4. Check that the front wall's face is flush with the sides' front shoulders (3/8" back from their
    front edges), so it sits tight against the panel when the sides are in their grooves.
 5. Glue the two front-panel halves together on a flat surface (puzzle joint), let it cure. Install
-   the 8 threaded inserts in the insert holes on the back.
+   the {inserts} threaded inserts in the insert holes on the back.
 6. Set both boxes in the nook, tight to the side walls. Shim level, then screw through each box back
    into a stud (2-1/2" screws, 2 per box). The 3/4" behind the back lets you scribe the sides.
 7. Lift the front panel on: each box side drops into its groove (open at the bottom, dog-boned at
@@ -268,14 +269,42 @@ ASSEMBLY = """
 
 HARDWARE = """
 - Wood glue (PVA)
-- 1-1/4" wood screws x 24 (box joinery)
-- 1/4-20 threaded inserts for wood x 8, no longer than 3/8" (front panel)
-- 1/4-20 x 1" bolts + washers x 8 (box fronts to front panel)
-- 2-1/2" screws x 4 into studs (box backs)
-- Piano hinge 1-1/2" open width, 2 x 24" lengths (1 per lid)
-- Soft-close lid stays x 2 (light-duty toy-box type)
+- 1-1/4" wood screws x {box_screws} (box joinery{foot_screws})
+- 1/4-20 threaded inserts for wood x {inserts}, no longer than 3/8" (front panel)
+- 1/4-20 x 1" bolts + washers x {inserts} (box fronts{foot_bolts} to front panel)
+- 2-1/2" screws x {stud_screws} into studs ({stud_what})
+- Piano hinge 1-1/2" open width, {boxes} x 24" length(s) (1 per lid)
+- Soft-close lid stays x {boxes} (light-duty toy-box type)
 - Shims as needed
 """.strip()
+
+
+def assembly_text(p):
+    if not p.single_box:
+        return ASSEMBLY.format(inserts=8)
+    text = ASSEMBLY.format(inserts=6)
+    text = text.replace("3. Boxes: glue", "3. Head box: glue")
+    text = text.replace("""   front edges), so it sits tight against the panel when the sides are in their grooves.""",
+                        """   front edges), so it sits tight against the panel when the sides are in their grooves.
+   Glue + screw (2 x 1-1/4") the foot block to the mattress-side face of the foot wall liner, above
+   the mattress, its face 3/8" back from the liner's front edge in the same way.""")
+    text = text.replace("""6. Set both boxes in the nook, tight to the side walls. Shim level, then screw through each box back
+   into a stud (2-1/2" screws, 2 per box). The 3/4" behind the back lets you scribe the sides.""",
+                        """6. Set the head box in the nook, tight to the head wall. Shim level, then screw through the box
+   back into a stud (2-1/2" screws, 2). Screw the foot wall liner to the foot wall studs (3 screws),
+   its front edge 3/8" proud of where the panel back will be. Scribe both to the walls as needed.""")
+    text = text.replace("each box side drops into its groove", "the box sides and the foot liner drop into their grooves")
+    text = text.replace("Reach in through each lid and bolt", "Reach in through the lid (and over the mattress at the foot) and bolt")
+    text = text.replace("bolt the box fronts to the inserts", "bolt the box front and the foot block to the inserts")
+    return text.replace("Hang each lid", "Hang the lid")
+
+
+def hardware_text(p):
+    if p.single_box:
+        return HARDWARE.format(box_screws=14, foot_screws=" + foot block", foot_bolts=" and foot block",
+                               inserts=6, stud_screws=5, stud_what="box back and foot liner", boxes=1)
+    return HARDWARE.format(box_screws=24, foot_screws="", foot_bolts="", inserts=8, stud_screws=4,
+                           stud_what="box backs", boxes=2)
 
 
 def _text_page(pdf, title, blocks):
@@ -328,6 +357,6 @@ def build_package(v, outdir, cut_list_md):
             _image_page(pdf, files[key])
         _image_page(pdf, os.path.join(outdir, "nesting.png"))
         _text_page(pdf, f"{v.title}: cut list, hardware, assembly",
-                   [("Cut list", table), ("Key dimensions", facts), ("Hardware", HARDWARE),
-                    ("Assembly", ASSEMBLY)])
+                   [("Cut list", table), ("Key dimensions", facts), ("Hardware", hardware_text(v.params)),
+                    ("Assembly", assembly_text(v.params))])
     return files

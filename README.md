@@ -4,17 +4,19 @@ Parametric design for a built-in toddler bed in a 64" wide nook, sized for a
 **Moonlight Slumber Little Dreamer** crib mattress (52" x 27.5" x 5"), with
 every part small enough to cut on a **4' x 4' CNC**.
 
-Three variants are generated:
+Four variants are generated:
 
 | Variant | Mattress | Exit | 4'x4' panels |
 |---|---|---|---|
 | [`v1_side_exit`](output/v1_side_exit) | on the floor | toward the foot end, like the reference photo | 2 |
+| [`v1b_side_exit_one_box`](output/v1b_side_exit_one_box) | on the floor, against the foot wall | toward the foot end; one wider box at the head only | 2 |
 | [`v2_center_exit`](output/v2_center_exit) | on the floor | centred; two near-equal panel halves | 2 |
 | [`v3_raised_drawers`](output/v3_raised_drawers) | on a deck over 2 small IKEA HEMNES underbed boxes | centred | 5 |
 
-**`v1_side_exit` is the chosen design** and gets the full CAD package:
+**`v1_side_exit` is the chosen design**, with `v1b_side_exit_one_box` as its
+one-box alternative. Both get the full CAD package:
 
-- `v1_side_exit.step`: 3D assembly (millimetres, one named solid per part) for Fusion 360, Onshape, FreeCAD etc.
+- `<variant>.step`: 3D assembly (millimetres, one named solid per part) for Fusion 360, Onshape, FreeCAD etc.
 - `drawings.pdf`: 3D view, front view, plan, section through a box, exploded box, dimensioned part drawings, nesting, cut list, hardware and assembly steps
 
 Each variant folder has:
@@ -38,6 +40,10 @@ Each variant folder has:
   (5 3/4" wide each with the defaults; 4 1/4" inside). They are joined with
   through tab-and-slot joints (dog-boned slots), have a front wall, a floor
   raised 1" and a back set 3/4" in from the wall for scribing.
+- One-box version (`boxes = "head"` in params): the head box grows to
+  10 3/4" wide (9 1/4" inside) and the mattress runs to the foot wall. A
+  3/4" liner board screwed to the foot wall sits in the panel's end groove,
+  and a short block above the mattress bolts the panel to it.
 - The front panel is removable. Each box side runs 3/8" into a groove
   pocketed into the back of the panel (open at the bottom, dog-boned at the
   top), and each box's front wall bolts into threaded inserts in

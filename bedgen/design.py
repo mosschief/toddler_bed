@@ -4,7 +4,7 @@ World coordinates (inches): x runs along the nook from the head wall (x=0) to
 the foot wall, y runs from the front face of the guard panel (y=0) back to
 the rear wall, z is up from the floor.
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 import numpy as np
 from shapely import affinity
@@ -47,7 +47,7 @@ def front_panel(p: Params, rail_top, sill_bottom, sill_top, exit_x0, opening_top
     opening_top: when set, the panel is cut away below this height between the
     boxes (the drawer opening) and the box fronts become full-height posts.
     """
-    L, bw = p.nook_width, p.box_width
+    L, hbw, fbw = p.nook_width, p.head_box_width, p.foot_box_width
     big = 3.0  # build oversized, round, then trim to the real edges
     panel = rect(-big, -big, L + big, rail_top)
 
@@ -61,7 +61,7 @@ def front_panel(p: Params, rail_top, sill_bottom, sill_top, exit_x0, opening_top
 
     if opening_top is not None:
         r = p.bit_diameter / 2 + 0.05
-        opening = round_convex(rect(bw, -10, L - bw, opening_top), r)
+        opening = round_convex(rect(hbw, -10, L - fbw, opening_top), r)
         panel = panel.difference(opening)
 
     panel = panel.intersection(rect(0, 0, L, rail_top))
@@ -69,7 +69,7 @@ def front_panel(p: Params, rail_top, sill_bottom, sill_top, exit_x0, opening_top
     # slots in each stretch of rail between a box and the exit
     slot_y0 = sill_top + p.slot_gap_above_sill
     slot_y1 = rail_top - p.top_rail
-    spans = [(bw, ex0), (ex1, L - bw)]
+    spans = [(hbw, ex0), (ex1, L - fbw)]
     slots = []
     for a, b in spans:
         slots += slots_between(a, b, slot_y0, slot_y1, p.slot_width, p.slat_width, margin=1.5)
@@ -97,7 +97,7 @@ def storage_boxes(p: Params, box_top, ledger_z=None, open_lid_deg=0.0):
     its long wall-side edge, so it opens toward the mattress. The mattress-side panel has a
     hand cut-out in its top edge for lifting the lid.
     """
-    T, D, bw, L = p.T, p.depth, p.box_width, p.nook_width
+    T, D, bw, L = p.T, p.depth, p.head_box_width, p.nook_width
     side_h = box_top - T
     inner_w = bw - 2 * T
     back_u0 = D - p.back_inset - T        # back panel front face, side-local depth
@@ -166,8 +166,8 @@ def storage_boxes(p: Params, box_top, ledger_z=None, open_lid_deg=0.0):
     lid = Part("Box lid", lid_shape, color=LID, note="piano hinge along the long wall-side edge")
 
     th = np.radians(open_lid_deg)
-    for x0, xs, sgn in ((0, (0, bw - T), 1), (L - bw, (L - T, L - bw), -1)):
-        wall_x, face_x = xs
+    for x0, _, sgn in p.box_spans:
+        wall_x, face_x = (0, bw - T) if sgn > 0 else (L - T, L - bw)
         side.placements.append(place((wall_x, T - gd, 0), Y, Z, X))
         face.placements.append(place((face_x, T - gd, 0), Y, Z, X))
         back.placements.append(place((x0 + T, T + back_u0 + T, 0), X, Z, NY))
@@ -187,24 +187,42 @@ def storage_boxes(p: Params, box_top, ledger_z=None, open_lid_deg=0.0):
         _shift_to_origin(part)
     parts += [side, face, back, front, bottom, lid]
 
+    if p.single_box:
+        # no foot box: a liner board on the foot wall sits in the panel groove,
+        # and a block above the mattress bolts the panel to it
+        cw, cz1 = 1.5, side_h - 0.5
+        liner = Part("Foot wall liner", rect(0, 0, D + gd, side_h), color=WOOD_DARK,
+                     note="screw to the foot wall studs; runs into the panel groove")
+        liner.placements.append(place((L - T, T - gd, 0), Y, Z, X))
+        fz0 = p.mattress_thickness + 0.5
+        fzs = [fz0 + (cz1 - fz0) * f for f in (0.25, 0.75)]
+        foot_cleat = Part("Foot block", rect(0, 0, cw, cz1 - fz0).difference(unary_union(
+            [Point(cw / 2, z - fz0).buffer(p.bolt_hole / 2, quad_segs=12) for z in fzs])),
+            color=WOOD_DARK, note="above the mattress; glue + 2 screws to the liner, 2 bolts into the panel")
+        foot_cleat.placements.append(place((L - T - cw, 2 * T, fz0), X, Z, NY))
+        foot_cleat.bolts = [(L - T - cw / 2, z) for z in fzs]
+        parts += [liner, foot_cleat]
+
     if ledger_z is not None:
         ledger = Part("Deck ledger (box side)", rect(0, 0, D, 1.5), color=WOOD_DARK,
                       note="screwed to the mattress-side face of each box")
         ledger.placements += [place((bw, T, ledger_z - 1.5), Y, Z, X),
-                              place((L - bw - T, T, ledger_z - 1.5), Y, Z, X)]
+                              place((L - p.foot_box_width - T, T, ledger_z - 1.5), Y, Z, X)]
         parts.append(ledger)
     return parts
 
 
 def add_panel_joinery(p: Params, panels, box_parts, box_top):
     """Grooves (dog-boned, open at the bottom) for every box side, and insert
-    holes for the box-front bolts, pocketed into the back of the front panel."""
-    T, bw, L, c = p.T, p.box_width, p.nook_width, p.tab_clearance
+    holes for the box-front and foot-block bolts, pocketed into the back of the front panel."""
+    T, L, c = p.T, p.nook_width, p.tab_clearance
     side_h = box_top - T
-    side_xs = [0, bw - T, L - bw, L - T]
+    side_xs = [x for x0, w, _ in p.box_spans for x in (x0, x0 + w - T)]
+    if p.single_box:
+        side_xs.append(L - T)  # foot wall liner
     grooves = [slot_with_dogbones(x - c, -2, x + T + c, side_h + c, p.bit_diameter) for x in side_xs]
-    front = next(q for q in box_parts if q.name == "Box front")
-    holes = [Point(x, z).buffer(p.insert_hole / 2, quad_segs=12) for x, z in front.bolts]
+    bolts = [b for q in box_parts for b in getattr(q, "bolts", [])]
+    holes = [Point(x, z).buffer(p.insert_hole / 2, quad_segs=12) for x, z in bolts]
     for panel in panels:
         ox = panel.placements[0].origin[0]
         oz = panel.placements[0].origin[2]
@@ -228,7 +246,7 @@ def fmt_in(x):
 def mattress(p: Params, z0):
     m = Part("Mattress", rect(0, 0, p.mattress_length, p.mattress_width),
              material="other", color="#f4f1ea")
-    m.placements.append(place((p.box_width + p.mattress_clearance, p.T + p.mattress_clearance / 2, z0),
+    m.placements.append(place((p.head_box_width + p.mattress_clearance, p.T + p.mattress_clearance / 2, z0),
                               X, Y, Z))
     m.render_thickness = p.mattress_thickness
     return m
@@ -271,6 +289,16 @@ def side_exit(p: Params):
         p.side_exit_start, j)
 
 
+def side_exit_one_box(p: Params):
+    p = replace(p, boxes="head")
+    j = p.side_exit_start + p.exit_width * 0.375
+    return _floor_variant(
+        p, "v1b_side_exit_one_box", "Floor bed, side exit, one box",
+        "Same as the side-exit bed, but with one wider box at the head end and the mattress "
+        "against the foot wall.",
+        p.side_exit_start, j)
+
+
 def center_exit(p: Params):
     ex0 = p.nook_width / 2 - p.exit_width / 2
     return _floor_variant(
@@ -282,6 +310,7 @@ def center_exit(p: Params):
 
 def raised_drawers(p: Params):
     T, D, L, bw = p.T, p.depth, p.nook_width, p.box_width
+    assert not p.single_box, "the raised version has two boxes"
     deck_under = p.ikea_box_height + p.drawer_headroom
     deck_top = deck_under + T
     mat_top = deck_top + p.mattress_thickness
@@ -366,4 +395,4 @@ def _shift_to_origin(part):
 
 
 def build_all(p: Params):
-    return [side_exit(p), center_exit(p), raised_drawers(p)]
+    return [side_exit(p), side_exit_one_box(p), center_exit(p), raised_drawers(p)]

@@ -164,8 +164,11 @@ def cut_list_md(v, sheets):
               f"exit sill {fmt(h['sill_top'])}",
               f"- **Exit opening:** {fmt(h['exit'][0])} to {fmt(h['exit'][1])} from the head wall; "
               f"panel halves join at {fmt(h['joint_x'])}",
-              f"- **Head/foot boxes:** {fmt(p.box_width)} wide outside, "
-              f"{fmt(p.box_width - 2 * p.T)} inside, {fmt(p.depth)} deep", ""]
+              (f"- **Head box:** {fmt(p.head_box_width)} wide outside, "
+               f"{fmt(p.head_box_width - 2 * p.T)} inside, {fmt(p.depth)} deep; no foot box "
+               f"(mattress against a liner on the foot wall)" if p.single_box else
+               f"- **Head/foot boxes:** {fmt(p.box_width)} wide outside, "
+               f"{fmt(p.box_width - 2 * p.T)} inside, {fmt(p.depth)} deep"), ""]
     return "\n".join(lines)
 
 
@@ -316,7 +319,7 @@ def render_front(v, path):
     L = p.nook_width
     # mattress (hidden behind the panel) dashed
     mz = h["mattress_top"] - p.mattress_thickness
-    mx = p.box_width + p.mattress_clearance
+    mx = p.head_box_width + p.mattress_clearance
     ax.add_patch(MplPolygon([(mx, mz), (mx + p.mattress_length, mz), (mx + p.mattress_length, mz + p.mattress_thickness),
                              (mx, mz + p.mattress_thickness)], closed=True, fc="#f4f1ea", ec="#999", ls="--", lw=0.8))
     for part in v.parts:
@@ -341,8 +344,8 @@ def render_front(v, path):
                 ax.add_patch(MplPolygon([(lo[0], lo[2]), (hi[0], lo[2]), (hi[0], hi[2]), (lo[0], hi[2])],
                                         closed=True, fc=part.color, ec="#5a4a32", lw=0.8))
     # box lids as hidden lines
-    for x0 in (0, L - p.box_width):
-        ax.plot([x0, x0 + p.box_width], [h["box_top"]] * 2, color="#7a6a50", ls="--", lw=0.8)
+    for x0, bw, _ in p.box_spans:
+        ax.plot([x0, x0 + bw], [h["box_top"]] * 2, color="#7a6a50", ls="--", lw=0.8)
 
     def dim_h(x0, x1, y, text):
         ax.annotate("", (x0, y), (x1, y), arrowprops=dict(arrowstyle="<->", lw=0.7, color="#333"))
@@ -354,8 +357,8 @@ def render_front(v, path):
 
     top = h["rail_top"]
     dim_h(0, L, top + 3.5, f"nook {fmt(L)}")
-    dim_h(0, p.box_width, top + 1.2, fmt(p.box_width))
-    dim_h(L - p.box_width, L, top + 1.2, fmt(p.box_width))
+    for x0, bw, _ in p.box_spans:
+        dim_h(x0, x0 + bw, top + 1.2, fmt(bw))
     dim_h(h["exit"][0], h["exit"][1], h["sill_top"] + 2.0, f"exit {fmt(p.exit_width)}")
     dim_v(L + 1.5, 0, top, f"rail {fmt(top)}")
     dim_v(L + 7.5, 0, h["mattress_top"], f"mattress top {fmt(h['mattress_top'])}")
