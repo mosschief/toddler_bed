@@ -138,37 +138,39 @@ def _leaflet(pts, w):
     return unary_union([a.union(b).convex_hull for a, b in zip(discs, discs[1:])])
 
 
-def frond(cx, y0, h, lean=0.0, leaf_w=0.4, leaf_len=2.1, web=0.25, rib=0.14, stem_t=0.15):
-    """Fern-frond cut-outs: a curved stem slot and oval leaflets alternating up a
-    gently bent midrib, longest near the bottom and shrinking to the tip.
-    Returns a list of separate holes, each at least `web` apart."""
+def frond(cx, y0, h, curl=0.0, leaf_w=0.4, leaf_len=2.1, web=0.25, rib=0.14, stem_t=0.15):
+    """Fern-frond cut-outs: a curved stem slot and oblong, curved leaflets alternating
+    up a midrib whose tip curls sideways by `curl` (inches, + right / - left), ending
+    in a long tip leaflet that follows the curl. Returns a list of separate holes,
+    each at least `web` apart."""
     import numpy as np
 
     def mid(t):  # midrib point and unit tangent at fraction t of the height
-        tan = np.array([2 * lean * t / h, 1.0])
-        return np.array([cx + lean * t * t, y0 + t * h]), tan / np.linalg.norm(tan)
+        tan = np.array([3 * curl * t * t / h, 1.0])
+        return np.array([cx + curl * t ** 3, y0 + t * h]), tan / np.linalg.norm(tan)
 
-    hook = 0.25 * (1 if lean >= 0 else -1)
-    sp = [mid(t)[0] + [hook * (1 - t / stem_t) ** 2, 0] for t in np.linspace(0, stem_t, 8)]
+    hook = 0.25 * (1 if curl >= 0 else -1)
+    sp = [mid(t)[0] + [-hook * (1 - t / stem_t) ** 2, 0] for t in np.linspace(0, stem_t, 8)]
     sp[0] = sp[0] + [0, leaf_w / 2]
     stem = LineString(sp).buffer(leaf_w * 0.4, quad_segs=RES)
+    min_len = 2.6 * leaf_w                          # keep every leaflet oblong
 
     def make(t, frac, side):
-        ang = np.radians(22 + 33 * frac)           # leaflets sweep up more toward the tip
-        L = max(leaf_len * (1 - frac) ** 0.75 * min(1.0, 0.7 + frac * 3), leaf_w * 1.3)
+        ang = np.radians(22 + 30 * frac)           # leaflets sweep up more toward the tip
+        L = max(leaf_len * (1 - frac) ** 0.6 * min(1.0, 0.7 + frac * 3), min_len)
         p, tan = mid(t)
         nrm = np.array([tan[1], -tan[0]]) * side   # away from the midrib
         q = p + (nrm * np.cos(ang) + tan * np.sin(ang)) * (rib + leaf_w * 0.33)
         pts = [q]
-        for k in range(10):                         # each leaflet curls 12 degrees upward
-            a = ang + np.radians(12) * (k + 0.5) / 10
-            q = q + (nrm * np.cos(a) + tan * np.sin(a)) * (L - leaf_w * 0.66) / 10
+        for k in range(12):                         # each leaflet curves 30 degrees upward
+            a = ang + np.radians(30) * (k + 0.5) / 12
+            q = q + (nrm * np.cos(a) + tan * np.sin(a)) * (L - leaf_w * 0.66) / 12
             pts.append(q)
         return _leaflet(pts, leaf_w)
 
     leaves, side = [], 1
     t0 = t = stem_t + 0.02
-    t1 = 0.93
+    t1 = 0.8
     while t < t1:
         frac = (t - t0) / (t1 - t0)
         leaf = make(t, frac, side)
@@ -181,11 +183,19 @@ def frond(cx, y0, h, lean=0.0, leaf_w=0.4, leaf_len=2.1, web=0.25, rib=0.14, ste
         leaves.append(leaf)
         side = -side
         t += 0.006
+    # tip leaflet along the curled end of the midrib, as long as clearance allows
+    ts = t - 0.12
+    while ts < 0.9:
+        tip = _leaflet([mid(u)[0] for u in np.linspace(ts, 1.0, 12)], leaf_w)
+        if all(tip.distance(o) >= web for o in leaves[-4:]):
+            leaves.append(tip)
+            break
+        ts += 0.005
     return [stem] + leaves
 
 
-def fronds_between(a, b, y0, y1, h, pitch, margin, leaf_w=0.4, web=0.25, lean=0.3):
-    """A row of fern fronds across a..b, leaning alternately left and right."""
+def fronds_between(a, b, y0, y1, h, pitch, margin, leaf_w=0.4, web=0.25, curl=1.5):
+    """A row of fern fronds across a..b whose tips curl alternately left and right."""
     span = b - a - 2 * margin
     width = 3.5 * h / 10.5
     n = int((span - width) // pitch) + 1
@@ -194,7 +204,7 @@ def fronds_between(a, b, y0, y1, h, pitch, margin, leaf_w=0.4, web=0.25, lean=0.
     start = a + margin + (span - (n - 1) * pitch) / 2
     out = []
     for i in range(n):
-        out += frond(start + i * pitch, y0, h, lean=lean * (1 if i % 2 else -1), leaf_w=leaf_w,
+        out += frond(start + i * pitch, y0, h, curl=curl * (1 if i % 2 else -1), leaf_w=leaf_w,
                      leaf_len=2.1 * h / 10.5, web=web)
     return out
 
