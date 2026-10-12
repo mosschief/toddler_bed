@@ -10,11 +10,12 @@ Four variants are generated:
 |---|---|---|---|
 | [`v1_side_exit`](output/v1_side_exit) | on the floor | toward the foot end, like the reference photo | 2 |
 | [`v1b_side_exit_one_box`](output/v1b_side_exit_one_box) | on the floor, against the foot wall | toward the foot end; one wider box at the head only | 2 |
+| [`v1c_side_exit_one_box_flush`](output/v1c_side_exit_one_box_flush) | on the floor, against the foot wall | as v1b, with the lid and foot board flush with the rail top | 2 |
 | [`v2_center_exit`](output/v2_center_exit) | on the floor | centred; two near-equal panel halves | 2 |
 | [`v3_raised_drawers`](output/v3_raised_drawers) | on a deck over 2 small IKEA HEMNES underbed boxes | centred | 5 |
 
-**`v1_side_exit` is the chosen design**, with `v1b_side_exit_one_box` as its
-one-box alternative. Both get the full CAD package:
+**`v1_side_exit` is the chosen design**, with `v1b_side_exit_one_box` and
+`v1c_side_exit_one_box_flush` as one-box alternatives. All three get the full CAD package:
 
 - `<variant>.step`: 3D assembly (millimetres, one named solid per part) for Fusion 360, Onshape, FreeCAD etc.
 - `drawings.pdf`: 3D view, front view, plan, section through a box, exploded box, dimensioned part drawings, nesting, cut list, hardware and assembly steps

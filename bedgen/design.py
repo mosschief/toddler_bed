@@ -191,7 +191,9 @@ def storage_boxes(p: Params, box_top, ledger_z=None, open_lid_deg=0.0):
         # no foot box: a liner board on the foot wall sits in the panel groove,
         # and a block above the mattress bolts the panel to it
         cw, cz1 = 1.5, side_h - 0.5
-        liner = Part("Foot wall liner", rect(0, 0, D + gd, side_h), color=WOOD_DARK,
+        # top flush with the box lid; the tongue in the panel groove stops at side_h
+        liner_shape = unary_union([rect(gd, 0, D + gd, side_h + T), rect(0, 0, gd + 0.01, side_h)])
+        liner = Part("Foot wall liner", liner_shape, color=WOOD_DARK,
                      note="screw to the foot wall studs; runs into the panel groove")
         liner.placements.append(place((L - T, T - gd, 0), Y, Z, X))
         fz0 = p.mattress_thickness + 0.5
@@ -299,6 +301,16 @@ def side_exit_one_box(p: Params):
         p.side_exit_start, j)
 
 
+def side_exit_one_box_flush(p: Params):
+    p = replace(p, boxes="head", lid_below_rail=0.0)
+    j = p.side_exit_start + p.exit_width * 0.375
+    return _floor_variant(
+        p, "v1c_side_exit_one_box_flush", "Floor bed, side exit, one box, flush tops",
+        "The one-box bed with the box lid and the foot board raised flush with the top of the "
+        "front panel.",
+        p.side_exit_start, j)
+
+
 def center_exit(p: Params):
     ex0 = p.nook_width / 2 - p.exit_width / 2
     return _floor_variant(
@@ -395,4 +407,4 @@ def _shift_to_origin(part):
 
 
 def build_all(p: Params):
-    return [side_exit(p), side_exit_one_box(p), center_exit(p), raised_drawers(p)]
+    return [side_exit(p), side_exit_one_box(p), side_exit_one_box_flush(p), center_exit(p), raised_drawers(p)]

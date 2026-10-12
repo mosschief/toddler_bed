@@ -12,7 +12,7 @@ Same as the side-exit bed, but with one wider box at the head end and the mattre
 | Box front | 1 | 10 3/4" x 12 1/4" | against the back of the front panel; 4 bolts into it |
 | Box floor | 1 | 10 3/4" x 25 1/2" | sits 1" off the floor |
 | Box lid | 1 | 10 3/4" x 27 5/8" | piano hinge along the long wall-side edge |
-| Foot wall liner | 1 | 28 1/8" x 12 1/4" | screw to the foot wall studs; runs into the panel groove |
+| Foot wall liner | 1 | 28 1/8" x 13" | screw to the foot wall studs; runs into the panel groove |
 | Foot block | 1 | 1 1/2" x 6 1/4" | above the mattress; glue + 2 screws to the liner, 2 bolts into the panel |
 
 - **Panels:** 2 pieces of 4'x4' (1 x 4'x8' sheet(s) of 3/4" plywood, each cut in half)

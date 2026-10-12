@@ -22,7 +22,7 @@ def main():
     ap.add_argument("--out", default="output")
     ap.add_argument("--full", action="append", default=None, metavar="VARIANT",
                     help="variants that also get the STEP model and PDF drawings "
-                         "(default: the two side-exit beds; 'all' for every variant)")
+                         "(default: the side-exit beds; 'all' for every variant)")
     args = ap.parse_args()
 
     p = Params()
@@ -35,7 +35,7 @@ def main():
             ap.error(f"unknown parameter {name}")
         setattr(p, name, value if fields[name].type in (str, "str") else float(value))
 
-    full = set(args.full or ["v1_side_exit", "v1b_side_exit_one_box"])
+    full = set(args.full or ["v1_side_exit", "v1b_side_exit_one_box", "v1c_side_exit_one_box_flush"])
     sections = []
     for v in build_all(p):
         outdir = os.path.join(args.out, v.key)
