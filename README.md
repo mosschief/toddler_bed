@@ -14,12 +14,13 @@ Four variants are generated:
 | [`v1d_side_exit_one_box_flowers`](output/v1d_side_exit_one_box_flowers) | on the floor, against the foot wall | as v1c, with flower cut-outs in the rail instead of slots | 2 |
 | [`v1e_side_exit_foot_box`](output/v1e_side_exit_foot_box) | on the floor, against the head wall | as v1c, with the box at the foot end and the exit moved to 35"-51" | 2 |
 | [`v1f_side_exit_foot_box_trees`](output/v1f_side_exit_foot_box_trees) | on the floor, against the head wall | as v1e, with a staggered row of pine-tree cut-outs instead of slots | 2 |
+| [`v1g_side_exit_foot_box_ferns`](output/v1g_side_exit_foot_box_ferns) | on the floor, against the head wall | as v1e, with fern-frond cut-outs instead of slots | 2 |
 | [`v2_center_exit`](output/v2_center_exit) | on the floor | centred; two near-equal panel halves | 2 |
 | [`v3_raised_drawers`](output/v3_raised_drawers) | on a deck over 2 small IKEA HEMNES underbed boxes | centred | 5 |
 
 **`v1e_side_exit_foot_box` is the chosen design**: one box at the foot end,
-lid flush with the rail top, straight slots. `v1f_side_exit_foot_box_trees` is
-the same bed with tree cut-outs; the other `v1*` beds are earlier
+lid flush with the rail top, straight slots. `v1f_side_exit_foot_box_trees` and
+`v1g_side_exit_foot_box_ferns` are the same bed with tree or fern cut-outs; the other `v1*` beds are earlier
 alternatives. All the `v1*` beds get the full CAD package:
 
 - `<variant>.step`: 3D assembly (millimetres, one named solid per part) for Fusion 360, Onshape, FreeCAD etc.
@@ -40,7 +41,9 @@ Each variant folder has:
   and the exit opening. Set `rail_cutouts = "flowers"` for 6 3/4" daisy cut-outs
   instead; their widest opening (the centre) is about 2", and the wood
   between petals is at least 0.3" wide. `rail_cutouts = "trees"` gives a
-  staggered row of 7" pine trees (widest opening about 1 7/8").
+  staggered row of 7" pine trees (widest opening about 1 7/8"), and
+  `"ferns"` a row of 8" fern fronds made of 1/2" wide leaflets with at least
+  0.3" of wood between them.
 - The panel is longer than the CNC bed, so it is cut as two pieces joined by a
   glued two-knob puzzle joint placed in the low sill under the exit. With a
   centred exit the halves are 33" and 32" long; with the side exit the long

@@ -40,6 +40,10 @@ class Params:
     tree_width: float = 3.1           # widest tier; the largest opening stays under 2-3/8"
     tree_pitch: float = 4.75
     tree_stagger: float = 1.0
+    fern_height: float = 8.0          # "ferns": fern-frond cut-outs
+    fern_pitch: float = 5.25
+    fern_leaf_width: float = 0.5      # every leaflet at least this wide; 1/4" bit friendly
+    fern_web: float = 0.3             # minimum wood between leaflets
     gap_corner_radius: float = 1.5    # rounded top corners at the exit
     sill_fillet: float = 1.0          # rounded inside corners at the exit floor
 
