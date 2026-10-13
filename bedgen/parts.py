@@ -207,50 +207,8 @@ def frond(cx, y0, h, curl=0.0, leaf_w=0.75, leaf_len=2.3, web=0.25, rib=0.14, st
     return [stem] + leaves
 
 
-def _curl_path(cx, y0, h, d, w, web, coil_r, turns, sway):
-    """Centre line of one curly-grass stalk: a gently wavy stem rising from
-    (cx, y0) and rolling into an Archimedean coil of radius `coil_r` at height h,
-    coiling toward `d` (+1 right, -1 left). Turns stay `web` of wood apart."""
-    import numpy as np
-    top = y0 + h - w / 2
-    c = np.array([cx + d * coil_r, top - coil_r])       # coil centre
-    ys = np.linspace(y0, c[1], 40)
-    u = (ys - y0) / (c[1] - y0)
-    stalk = [(cx - d * sway * np.sin(1.5 * np.pi * u_) * (1 - u_ ** 3), y) for u_, y in zip(u, ys)]
-    b = (w + web + 0.02) / (2 * np.pi)                 # a hair over `web`, for facet error
-    turns = min(turns, (coil_r - 0.2) / (2 * np.pi * b))  # stop before the eye pinches shut
-    coil = [(c[0] - d * (coil_r - b * phi) * np.cos(phi), c[1] + (coil_r - b * phi) * np.sin(phi))
-            for phi in np.linspace(0, 2 * np.pi * turns, int(80 * turns))]
-    return LineString(stalk + coil[1:])
-
-
-def fiddlehead(cx, y0, h, direction=1, w=0.32, coil_r=1.1, turns=1.5, web=0.25):
-    """Curly grass: a tall wavy stalk rolling into a big spiral at the top (a fern
-    fiddlehead), with shorter curly stalks fanning out of the same tuft, each
-    rolling outward. Every stalk is a slot `w` wide for a 1/4" bit, kept `web`
-    of wood clear of the others. `direction` +1 coils the tall one right, -1 left.
-    Returns a list of holes."""
-    from shapely import affinity
-    d = 1 if direction >= 0 else -1
-    base = y0 + w / 2
-    holes = [_curl_path(cx, base, h - w / 2, d, w, web, coil_r, turns, 0.35).buffer(w / 2, quad_segs=RES)]
-    # side stalks: (offset from the tall stalk, height, coil radius, turns, lean in degrees)
-    for side in (-d, d):
-        for off, hh, r, t, lean in ((0.55, 0.45 * h, 0.7, 1.25, 10), (1.1, 0.27 * h, 0.55, 1.25, 26)):
-            for tweak in (0, 0.15, 0.3):
-                path = _curl_path(cx + side * (off + tweak), base, hh, side, w, web, r, t, 0.12)
-                path = affinity.rotate(path, -side * lean, origin=(cx + side * (off + tweak), base))
-                hole = path.buffer(w / 2, quad_segs=RES)
-                if hole.bounds[1] >= y0 - 1e-6 and all(hole.distance(o) >= web for o in holes):
-                    holes.append(hole)
-                    break
-    return holes
-
-
-def fronds_between(a, b, y0, y1, h, pitch, margin, leaf_w=0.75, web=0.25, curl=1.5, fiddleheads=False):
-    """A row of fern fronds across a..b whose tips curl alternately left and right.
-    With `fiddleheads`, curly grass stalks stand in the gaps where neighbouring
-    tips curl apart, and frond leaflets near them are shortened to keep clear."""
+def fronds_between(a, b, y0, y1, h, pitch, margin, leaf_w=0.75, web=0.25, curl=1.5):
+    """A row of fern fronds across a..b whose tips curl alternately left and right."""
     span = b - a - 2 * margin
     width = 5.0 * h / 10.75
     n = int((span - width) // pitch) + 1
@@ -258,11 +216,6 @@ def fronds_between(a, b, y0, y1, h, pitch, margin, leaf_w=0.75, web=0.25, curl=1
         return []
     start = a + margin + (span - (n - 1) * pitch) / 2
     out = []
-    if fiddleheads:
-        # frond i curls left when i is even, so gaps 0-1, 2-3, ... open up at the top
-        for i in range(0, n - 1, 2):
-            gx = start + (i + 0.5) * pitch
-            out += fiddlehead(gx - 0.0, y0, h, direction=1 if (i // 2) % 2 else -1, web=web)
     for i in range(n):
         out += frond(start + i * pitch, y0, h, curl=curl * (1 if i % 2 else -1), leaf_w=leaf_w,
                      leaf_len=2.7 * h / 10.75, web=web, avoid=unary_union(out) if out else None)

@@ -72,10 +72,9 @@ def front_panel(p: Params, rail_top, sill_bottom, sill_top, exit_x0, opening_top
     spans = [(hbw, ex0), (ex1, L - fbw)]
     slots = []
     for a, b in spans:
-        if p.rail_cutouts in ("ferns", "ferns_fiddleheads"):
+        if p.rail_cutouts == "ferns":
             slots += fronds_between(a, b, p.fern_bottom, rail_top - 1.25, p.fern_height, p.fern_pitch, margin=1.5,
-                                    leaf_w=p.fern_leaf_width, web=p.fern_web,
-                                    fiddleheads=p.rail_cutouts == "ferns_fiddleheads")
+                                    leaf_w=p.fern_leaf_width, web=p.fern_web)
         elif p.rail_cutouts == "trees":
             slots += trees_between(a, b, slot_y0, slot_y1, p.tree_height, p.tree_width,
                                    p.tree_pitch, p.tree_stagger, margin=1.5)
@@ -361,14 +360,6 @@ def side_exit_foot_box_ferns(p: Params):
     return v
 
 
-def side_exit_foot_box_fiddleheads(p: Params):
-    v = side_exit_foot_box(replace(p, rail_cutouts="ferns_fiddleheads"))
-    v.key = "v1h_side_exit_foot_box_fiddleheads"
-    v.title = "Floor bed, side exit, box at the foot, ferns + curly grass"
-    v.summary = "The fern bed with curly fiddlehead stalks and grass tufts between the fronds."
-    return v
-
-
 def center_exit(p: Params):
     ex0 = p.nook_width / 2 - p.exit_width / 2
     return _floor_variant(
@@ -465,4 +456,4 @@ def _shift_to_origin(part):
 
 
 def build_all(p: Params):
-    return [side_exit(p), side_exit_one_box(p), side_exit_one_box_flush(p), side_exit_one_box_flowers(p), side_exit_foot_box(p), side_exit_foot_box_trees(p), side_exit_foot_box_ferns(p), side_exit_foot_box_fiddleheads(p), center_exit(p), raised_drawers(p)]
+    return [side_exit(p), side_exit_one_box(p), side_exit_one_box_flush(p), side_exit_one_box_flowers(p), side_exit_foot_box(p), side_exit_foot_box_trees(p), side_exit_foot_box_ferns(p), center_exit(p), raised_drawers(p)]
