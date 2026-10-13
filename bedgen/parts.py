@@ -190,7 +190,8 @@ def frond(cx, y0, h, curl=0.0, leaf_w=0.75, leaf_len=2.3, web=0.25, rib=0.14, st
             scale -= 0.05
             leaf = make(t, frac, side, scale)
         if avoid is not None and leaf.distance(avoid) < web:
-            side = -side
+            side = -side                            # no room here: try the other side, a bit higher
+            t += 0.004
             continue
         leaves.append(leaf)
         side = -side
@@ -206,40 +207,43 @@ def frond(cx, y0, h, curl=0.0, leaf_w=0.75, leaf_len=2.3, web=0.25, rib=0.14, st
     return [stem] + leaves
 
 
-def fiddlehead(cx, y0, h, direction=1, w=0.32, coil_r=0.85, turns=1.1, web=0.25):
-    """Curly grass: a slender stalk rising from a small tuft of blades and rolling
-    into a spiral at the top (a fern fiddlehead). The stalk and coil are one slot
-    `w` wide, cut by a 1/4" bit; the coil's turns keep `web` of wood between them.
-    `direction` +1 coils to the right, -1 to the left. Returns a list of holes."""
+def _curl_path(cx, y0, h, d, w, web, coil_r, turns, sway):
+    """Centre line of one curly-grass stalk: a gently wavy stem rising from
+    (cx, y0) and rolling into an Archimedean coil of radius `coil_r` at height h,
+    coiling toward `d` (+1 right, -1 left). Turns stay `web` of wood apart."""
     import numpy as np
-    d = 1 if direction >= 0 else -1
     top = y0 + h - w / 2
     c = np.array([cx + d * coil_r, top - coil_r])       # coil centre
-    base = y0 + 0.35
-    # stalk: gentle S-curve from the tuft up to the outside of the coil
-    ys = np.linspace(base, c[1], 24)
-    u = (ys - base) / (c[1] - base)
-    stalk = [np.array([cx - d * 0.18 * np.sin(np.pi * u_), y]) for u_, y in zip(u, ys)]
-    # Archimedean coil, shrinking inward so neighbouring turns stay `web` apart
-    b = (w + web) / (2 * np.pi)
-    coil = []
-    for phi in np.linspace(0, 2 * np.pi * turns, 80):
-        th = np.pi - d * phi if d > 0 else d * phi
-        rr = coil_r - b * phi
-        coil.append(c + rr * np.array([np.cos(np.pi - phi), np.sin(np.pi - phi)]) * np.array([d, 1]))
-    holes = [LineString(stalk + coil[1:]).buffer(w / 2, quad_segs=RES)]
-    # tuft: short curved blades fanning out on both sides of the stalk foot
-    for side in (-1, 1):
-        for off, length, lean in ((0.6, 1.0, 18), (1.15, 0.7, 38)):
-            p0 = np.array([cx + side * off, y0 + w / 2])
-            pts, q = [p0], p0.copy()
-            for k in range(8):
-                a_ = np.radians(90 - side * (lean + 25 * k / 8))
-                q = q + np.array([np.cos(a_), np.sin(a_)]) * length / 8
-                pts.append(q)
-            blade = LineString(pts).buffer(w / 2, quad_segs=RES)
-            if all(blade.distance(o) >= web for o in holes):
-                holes.append(blade)
+    ys = np.linspace(y0, c[1], 40)
+    u = (ys - y0) / (c[1] - y0)
+    stalk = [(cx - d * sway * np.sin(1.5 * np.pi * u_) * (1 - u_ ** 3), y) for u_, y in zip(u, ys)]
+    b = (w + web + 0.02) / (2 * np.pi)                 # a hair over `web`, for facet error
+    turns = min(turns, (coil_r - 0.2) / (2 * np.pi * b))  # stop before the eye pinches shut
+    coil = [(c[0] - d * (coil_r - b * phi) * np.cos(phi), c[1] + (coil_r - b * phi) * np.sin(phi))
+            for phi in np.linspace(0, 2 * np.pi * turns, int(80 * turns))]
+    return LineString(stalk + coil[1:])
+
+
+def fiddlehead(cx, y0, h, direction=1, w=0.32, coil_r=1.1, turns=1.5, web=0.25):
+    """Curly grass: a tall wavy stalk rolling into a big spiral at the top (a fern
+    fiddlehead), with shorter curly stalks fanning out of the same tuft, each
+    rolling outward. Every stalk is a slot `w` wide for a 1/4" bit, kept `web`
+    of wood clear of the others. `direction` +1 coils the tall one right, -1 left.
+    Returns a list of holes."""
+    from shapely import affinity
+    d = 1 if direction >= 0 else -1
+    base = y0 + w / 2
+    holes = [_curl_path(cx, base, h - w / 2, d, w, web, coil_r, turns, 0.35).buffer(w / 2, quad_segs=RES)]
+    # side stalks: (offset from the tall stalk, height, coil radius, turns, lean in degrees)
+    for side in (-d, d):
+        for off, hh, r, t, lean in ((0.55, 0.45 * h, 0.7, 1.25, 10), (1.1, 0.27 * h, 0.55, 1.25, 26)):
+            for tweak in (0, 0.15, 0.3):
+                path = _curl_path(cx + side * (off + tweak), base, hh, side, w, web, r, t, 0.12)
+                path = affinity.rotate(path, -side * lean, origin=(cx + side * (off + tweak), base))
+                hole = path.buffer(w / 2, quad_segs=RES)
+                if hole.bounds[1] >= y0 - 1e-6 and all(hole.distance(o) >= web for o in holes):
+                    holes.append(hole)
+                    break
     return holes
 
 
