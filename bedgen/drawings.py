@@ -259,7 +259,7 @@ ASSEMBLY = """
 6. Set both boxes in the nook, tight to the side walls. Shim level, then screw through each box back
    into a stud (2-1/2" screws, 2 per box). The 3/4" behind the back lets you scribe the sides.
 7. Lift the front panel on: each box side drops into its groove (open at the bottom, dog-boned at
-   the top). Reach in through each lid and bolt the box fronts to the inserts (1/4-20 x 1" bolts
+   the top). Reach in through each lid and bolt the box fronts to the inserts (1/4-20 x 1-1/4" bolts
    with washers). No glue here, so the front panel can come off later.
 8. Hang each lid with a piano hinge along its long wall-side edge (on the top outside edge of the
    wall-side panel), so it opens toward the mattress and stands up against the wall. Fit a
@@ -270,8 +270,8 @@ ASSEMBLY = """
 HARDWARE = """
 - Wood glue (PVA)
 - 1-1/4" wood screws x {box_screws} (box joinery{foot_screws})
-- 1/4-20 threaded inserts for wood x {inserts}, no longer than 3/8" (front panel)
-- 1/4-20 x 1" bolts + washers x {inserts} (box fronts{foot_bolts} to front panel)
+- 1/4-20 threaded inserts for wood x {inserts}, no longer than 1/2" (front panel; pilot 3/8", set p.insert_hole to match)
+- 1/4-20 x 1-1/4" bolts + washers x {inserts} (box fronts{foot_bolts} to front panel)
 - 2-1/2" screws x {stud_screws} into studs ({stud_what})
 - Piano hinge 1-1/2" open width, {boxes} x 24" length(s) (1 per lid)
 - Soft-close lid stays x {boxes} (light-duty toy-box type)
