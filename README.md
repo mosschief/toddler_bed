@@ -72,6 +72,30 @@ Each variant folder has:
   sitting on ledgers screwed to the boxes and the wall. The IKEA fronts are
   replaced by inset plywood faces with a cut-through finger pull.
 
+## Treehouse bunk (`generate_bunk.py`)
+
+A ground-up bunk bed for the same nook and mattress, built the same way (CNC
+plywood, tab-and-slot, dog-boned grooves, DXFs with holes on `CUT_INSIDE`).
+`python3 generate_bunk.py` writes [`output/bunk_treehouse`](output/bunk_treehouse)
+and [`output/bunk_treehouse_ferns`](output/bunk_treehouse_ferns); settings live in
+`BunkParams` in `bedgen/bunk.py` (override with `--set name=value`).
+
+- **Lower bunk is an enclosed treehouse:** mattress on the floor, closed in by the
+  head-wall liner, the back wall, the foot tower and the deck above, with a
+  full-height front wall that has a 16" arched door and two 10" arched windows
+  (windows are at least 9" so nothing can trap a head). Sitting room is 29 3/4".
+- **Upper bunk** sits on a 4-piece deck on ledgers (front wall, back wall, head
+  liner) and the tower; the front wall carries on up as its rail, 6" above the
+  mattress, with 2" slots.
+- **Climb:** the foot tower (10 3/4" wide) has 3 shelves; toe holes in the front wall
+  (3 1/4" tall, under the 3.5" opening limit) land on each shelf, and the last step
+  is the deck itself through a 9" gap in the rail by the foot wall. A mattress stop
+  keeps the upper mattress off that landing.
+- **Height limit:** each front-wall piece runs floor to rail top in one piece, so the
+  rail top (46 1/2") is set by the 47" usable CNC bed. Raise `deck_under` for more
+  sitting room below, at the cost of rail height above the mattress (5" minimum).
+- 6 4'x4' panels (3 sheets of 4'x8').
+
 ## Regenerating
 
 ```bash

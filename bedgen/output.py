@@ -206,7 +206,7 @@ def render_iso(v, path, view=(0.62, 1.0, -0.62), parts=None, title=None):
         return np.c_[pts @ right, pts @ up]
 
     L, D, T = p.nook_width, p.depth, p.T
-    back = np.array([[0, T + D, 0], [L, T + D, 0], [L, T + D, 30], [0, T + D, 30]], float)
+    back = np.array([[0, T + D, 0], [L, T + D, 0], [L, T + D, getattr(p, "wall_height", 30)], [0, T + D, getattr(p, "wall_height", 30)]], float)
     floor = np.array([[-6, -10, 0], [L + 6, -10, 0], [L + 6, T + D, 0], [-6, T + D, 0]], float)
     faces = [([proj(back)], "#ece7df", "#ece7df"), ([proj(floor)], "#d8cfc2", "#d8cfc2")]
 
