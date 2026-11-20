@@ -12,7 +12,7 @@ Fresh bunk design: an enclosed treehouse lower bunk with an arched door and wind
 | Cabinet lid | 1 | 11 1/2" x 27 5/8" | piano hinge along the head-wall edge; flush with the rail top |
 | Tower side (wall) | 1 | 28 1/8" x 34 3/4" | screw to the foot-wall studs |
 | Tower side (mattress) | 1 | 28 1/8" x 34 3/4" | cubby openings face the lower bunk; carries the deck |
-| Tower step shelf | 3 | 10 3/4" x 27 1/2" | you step on its front edge through a toe hole |
+| Tower step shelf | 4 | 10 3/4" x 27 1/2" | you step on its front edge through a toe hole |
 | Deck A | 1 | 15 13/16" x 27 3/4" | upper mattress platform; screw down into ledgers |
 | Deck B | 1 | 15 13/16" x 27 3/4" | upper mattress platform; screw down into ledgers |
 | Deck C | 1 | 15 13/16" x 27 3/4" | upper mattress platform; screw down into ledgers |
@@ -28,6 +28,6 @@ Fresh bunk design: an enclosed treehouse lower bunk with an arched door and wind
 - **Lower bunk sitting room** (mattress top to deck): 29 3/4"
 - **Upper rail above mattress:** 6" (ASTM F1427 minimum is 5")
 - **Door:** 34 1/4" to 50 1/4" from the head wall, sill 4", arch top 28"
-- **Climb:** toe holes onto shelves at 8 7/8", 17 3/4", 26 5/8", then the deck at 35 1/2" (a 4" tread on the deck through the climb-in gap, 55" to the foot wall), then straight onto the upper mattress
+- **Climb:** toe holes onto shelves at 7 1/8", 14 3/16", 21 5/16", 28 3/8", then the deck at 35 1/2" (a 4" tread on the deck through the climb-in gap, 55" to the foot wall), then straight onto the upper mattress
 - **Top-bunk cabinet:** 10" inside x 25 1/2" deep x 10 1/4" tall, lid flush with the rail top
 - **Front wall joint:** 31" from the head wall

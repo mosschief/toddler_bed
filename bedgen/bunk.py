@@ -48,7 +48,7 @@ class BunkParams(Params):
     upper_cutouts: str = "slots"      # "slots" or "ferns"
     # --- foot tower / climb -------------------------------------------------
     tower_width: float = 10.75        # outside, foot wall to mattress side (two sides + 9 1/4" inside)
-    steps: int = 3                    # shelves you step on; the deck is the last step
+    steps: int = 4                    # shelves you step on; the deck tread is the last step
     step_hole_height: float = 3.25    # under 3.5" so no opening traps a head
     step_hole_side: float = 1.0       # solid wood each side of a toe hole
     entry_post: float = 1.0           # rail end past the tower's mattress side
@@ -389,6 +389,18 @@ def treehouse_bunk(p: BunkParams, key="bunk_treehouse", title="Treehouse bunk",
     v = Variant(key, title, summary, p)
     v.parts = [pa, pb] + end_and_tower(p) + deck_parts(p) + mattresses(p)
     v.open_parts = [q if q.name != "Cabinet lid" else cabinet(p, open_lid_deg=88)[-1] for q in v.parts]
+    # renders only: draw the deck tread (in front of the wall) as its own slab so the
+    # painter's sort puts it in front of the front wall instead of behind it
+    for i, q in enumerate(v.open_parts):
+        if q.name.startswith("Deck") and q.size[1] > p.depth + 1:
+            w = q.size[0]
+            front = Part(q.name, q.shape.intersection(rect(-1, -1, w + 1, p.tread_depth)), placements=q.placements,
+                         color=q.color, material="other")
+            rest = Part(q.name, q.shape.difference(rect(-1, -1, w + 1, p.tread_depth)), placements=q.placements,
+                        color=q.color, material="other")
+            front.render_thickness = rest.render_thickness = p.T
+            v.open_parts[i:i + 1] = [rest, front]
+            break
     ex0 = p.entry_x0
     v.heights = dict(lower_mattress_top=p.mattress_thickness, deck_under=p.deck_under, deck_top=p.deck_top,
                      upper_mattress_top=p.deck_top + p.mattress_thickness, rail_top=p.rail_top,

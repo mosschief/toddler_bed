@@ -186,7 +186,7 @@ def write_bunk(v, outdir, step=True):
         write_sheet_dxf(sheet, i, v.params, os.path.join(outdir, "sheets", f"panel_{i + 1}.dxf"))
     draw_sheets(v, sheets, os.path.join(outdir, "nesting.png"))
     render_iso(v, os.path.join(outdir, "preview.png"), parts=v.open_parts)
-    cut = [q for q in v.parts if not q.name.startswith("Front wall")]
+    cut = [q for q in v.open_parts if not q.name.startswith("Front wall")]
     render_iso(v, os.path.join(outdir, "cutaway.png"), parts=cut, title=f"{v.title}: front wall removed")
     front_elevation(v, os.path.join(outdir, "front.png"))
     side_section(v, os.path.join(outdir, "sections.png"))

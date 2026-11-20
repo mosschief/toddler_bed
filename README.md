@@ -89,7 +89,7 @@ and [`output/bunk_treehouse_ferns`](output/bunk_treehouse_ferns); settings live 
   mattress, with 2" slots. The upper mattress runs to the foot wall, and a lidded
   cabinet (10" inside) sits at the head end, lid flush with the rail top and
   piano-hinged on the head wall like the floor bed's box.
-- **Climb:** the foot tower (10 3/4" wide) has 3 shelves; toe holes in the front wall
+- **Climb:** the foot tower (10 3/4" wide) has 4 shelves (about 7" apart); toe holes in the front wall
   (3 1/4" tall, under the 3.5" opening limit) land on each shelf. The top step is a
   4" tread on the foot-end deck piece that sticks out through a 9" gap in the rail,
   right at the end of the upper mattress, so you climb straight onto the bed.
