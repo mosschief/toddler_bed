@@ -54,7 +54,7 @@ def front_elevation(v, path):
     dim_h(0, L, H + 3.0, f"nook {fmt(L)}")
     dim_h(*h["entry"], H + 0.8, f"climb-in {fmt(h['entry'][1] - h['entry'][0])}")
     dim_h(*h["door"], p.door_sill + 1.5, f"door {fmt(p.door_width)}")
-    dim_v(L + 17, 0, H, f"rail top {fmt(H)}")
+    dim_v(L + 25, 0, H, f"rail top {fmt(H)}")
     dim_v(L + 8.5, p.deck_top + p.mattress_thickness, H, f"rail above mattress {fmt(h['rail_above_mattress'])}")
     dim_v(L + 8.5, 0, p.deck_top, f"deck top {fmt(p.deck_top)}")
     dim_v(-6.5, p.mattress_thickness, p.deck_under, f"sitting room\n{fmt(h['headroom'])}")
@@ -64,7 +64,7 @@ def front_elevation(v, path):
     ax.axvline(h["joint_x"], color="#c0392b", lw=0.6, ls=":")
     ax.text(h["joint_x"], -1.2, "wall joint", ha="center", va="top", fontsize=7.5, color="#c0392b")
     ax.plot([-2, L + 2], [0, 0], color="#555", lw=1)
-    ax.set_xlim(-12, L + 30)
+    ax.set_xlim(-12, L + 36)
     ax.set_ylim(-3, H + 6)
     ax.set_title(f"{v.title}: front view (dashed: mattresses, deck and step shelves behind)", fontsize=12)
     fig.tight_layout()
@@ -100,8 +100,12 @@ def side_section(v, path):
                 ax.annotate("toe hole", (0, z + p.step_hole_height / 2), (-9, z + p.step_hole_height / 2),
                             fontsize=7.5, va="center", arrowprops=dict(arrowstyle="->", lw=0.6))
                 ax.add_patch(Rectangle((-0.05, z), T + 0.1, p.step_hole_height, fc="white", ec="none"))
-            ax.add_patch(Rectangle((-0.05, p.deck_top), T + 0.1, p.rail_top, fc="white", ec="none"))
-            ax.text(T + D / 2, p.deck_top + 2, "landing (climb-in gap above)", ha="center", fontsize=8)
+            ax.add_patch(Rectangle((-0.05, p.deck_under + T + 0.02), T + 0.1, p.rail_top, fc="white", ec="none"))
+            ax.add_patch(Rectangle((-p.tread_depth, p.deck_under), p.tread_depth + T, T, fc="#e3cfa8", ec="#5a4a32"))
+            ax.add_patch(Rectangle((T + 0.125, p.deck_top), p.mattress_width, p.mattress_thickness, fc="#f4f1ea", ec="#999"))
+            ax.annotate("top step (deck tread)", (-p.tread_depth / 2, p.deck_top), (-11, p.deck_top + 6),
+                        fontsize=7.5, arrowprops=dict(arrowstyle="->", lw=0.6))
+            ax.text(T + D / 2, p.deck_top + 2, "upper mattress", ha="center", fontsize=8)
         ax.set_xlim(-12, T + D + 4)
         ax.set_ylim(-3, p.rail_top + 6)
     fig.suptitle(f"{v.title}: sections (front at left, back wall hatched)", fontsize=12)
@@ -128,8 +132,11 @@ ASSEMBLY = """
    back. Glue them in. Check the ledger tops are level all round.
 7. Lay the deck pieces on the ledgers and tower sides, seam batten glued + screwed underneath.
    Screw the deck down every 6" into every ledger and into the tower sides and liner below.
-8. Tap the mattress stop's tabs into the deck mortises over the tower side; glue + screw up
-   through the deck.
+8. Cabinet: glue the cabinet back's tabs into the head liner (do this before step 6 if the
+   liner is easier to reach) and into the cabinet side, whose front edge sits in its groove in
+   the rail. Screw up through the deck into the cabinet side. Hang the lid with a piano hinge
+   on the head-wall edge so it opens toward the mattress and rests on the wall; add a
+   soft-close lid stay.
 9. Finish (toy-safe), let cure, add both mattresses.
 """.strip()
 
@@ -137,6 +144,8 @@ HARDWARE = """
 - Wood glue (PVA)
 - 1-1/4" wood screws, ~80 (deck to ledgers, ledgers to front wall, shelf tabs, battens)
 - 2-1/2" or 3" structural screws into studs, ~20 (back-wall ledgers, head liner, tower wall side)
+- Piano hinge, 1-1/2" open width, 24" long (cabinet lid)
+- Soft-close lid stay (light-duty toy-box type)
 - Shims as needed
 """.strip()
 
@@ -158,7 +167,10 @@ def cut_list(v, sheets):
               f"- **Door:** {fmt(h['door'][0])} to {fmt(h['door'][1])} from the head wall, sill {fmt(p.door_sill)}, "
               f"arch top {fmt(p.door_top)}",
               f"- **Climb:** toe holes onto shelves at {', '.join(fmt(z) for z in h['steps'])}, then the deck at "
-              f"{fmt(p.deck_top)}; climb-in gap {fmt(h['entry'][0])} to the foot wall",
+              f"{fmt(p.deck_top)} (a {fmt(p.tread_depth)} tread on the deck through the climb-in gap, "
+              f"{fmt(h['entry'][0])} to the foot wall), then straight onto the upper mattress",
+              f"- **Top-bunk cabinet:** {fmt(p.cab_side_x - p.T)} inside x {fmt(p.depth - p.back_inset - 2 * p.T)} deep x "
+              f"{fmt(p.cab_top - p.deck_top)} tall, lid flush with the rail top",
               f"- **Front wall joint:** {fmt(h['joint_x'])} from the head wall", ""]
     return "\n".join(lines)
 
@@ -173,7 +185,7 @@ def write_bunk(v, outdir, step=True):
     for i, sheet in enumerate(sheets):
         write_sheet_dxf(sheet, i, v.params, os.path.join(outdir, "sheets", f"panel_{i + 1}.dxf"))
     draw_sheets(v, sheets, os.path.join(outdir, "nesting.png"))
-    render_iso(v, os.path.join(outdir, "preview.png"))
+    render_iso(v, os.path.join(outdir, "preview.png"), parts=v.open_parts)
     cut = [q for q in v.parts if not q.name.startswith("Front wall")]
     render_iso(v, os.path.join(outdir, "cutaway.png"), parts=cut, title=f"{v.title}: front wall removed")
     front_elevation(v, os.path.join(outdir, "front.png"))

@@ -86,11 +86,13 @@ and [`output/bunk_treehouse_ferns`](output/bunk_treehouse_ferns); settings live 
   (windows are at least 9" so nothing can trap a head). Sitting room is 29 3/4".
 - **Upper bunk** sits on a 4-piece deck on ledgers (front wall, back wall, head
   liner) and the tower; the front wall carries on up as its rail, 6" above the
-  mattress, with 2" slots.
+  mattress, with 2" slots. The upper mattress runs to the foot wall, and a lidded
+  cabinet (10" inside) sits at the head end, lid flush with the rail top and
+  piano-hinged on the head wall like the floor bed's box.
 - **Climb:** the foot tower (10 3/4" wide) has 3 shelves; toe holes in the front wall
-  (3 1/4" tall, under the 3.5" opening limit) land on each shelf, and the last step
-  is the deck itself through a 9" gap in the rail by the foot wall. A mattress stop
-  keeps the upper mattress off that landing.
+  (3 1/4" tall, under the 3.5" opening limit) land on each shelf. The top step is a
+  4" tread on the foot-end deck piece that sticks out through a 9" gap in the rail,
+  right at the end of the upper mattress, so you climb straight onto the bed.
 - **Height limit:** each front-wall piece runs floor to rail top in one piece, so the
   rail top (46 1/2") is set by the 47" usable CNC bed. Raise `deck_under` for more
   sitting room below, at the cost of rail height above the mattress (5" minimum).

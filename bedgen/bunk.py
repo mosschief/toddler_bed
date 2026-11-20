@@ -5,8 +5,9 @@ wall, a step tower at the foot and the upper deck close it in, and a tall
 front wall with an arched door and windows closes the front. The upper bunk
 sits on that deck, with the front wall carrying on up as its guard rail. You
 climb to the top through toe holes in the front of the foot tower: each hole
-lands on one of the tower's shelves, and the last step is the deck itself,
-through a gap in the rail over the tower.
+lands on one of the tower's shelves, and the top step is a tread on the deck
+that sticks out through a gap in the rail, right at the foot of the upper
+mattress. A lidded cabinet sits at the head end of the upper bunk.
 
 Every front-wall piece runs floor to rail top in one piece, so the whole bed
 stays within the 47" usable height of a 4'x4' CNC bed. That caps the rail
@@ -16,6 +17,8 @@ World coordinates as in design.py: x from the head wall (0) to the foot wall,
 y from the front face (0) back to the rear wall, z up from the floor.
 """
 from dataclasses import dataclass, replace
+
+import numpy as np
 
 from shapely import affinity
 from shapely.geometry import Point
@@ -54,7 +57,7 @@ class BunkParams(Params):
     deck_pieces: int = 4              # narrow enough to nest beside the tall parts (6 panels, not 7)
     front_ledger_joint_x: float = 42.0
     joint_x: float = 31.0             # vertical puzzle joint in the front wall
-    stop_height: float = 4.0          # mattress stop between the upper mattress and the landing
+    tread_depth: float = 4.0          # top deck piece sticks out through the climb-in gap as the top step
     wall_height: float = 52.0         # backdrop in the renders only
 
     # --- derived ------------------------------------------------------------
@@ -86,6 +89,16 @@ class BunkParams(Params):
         return [self.deck_top * k / n for k in range(1, n)]
 
     @property
+    def cab_side_x(self):
+        """Mattress-side panel of the top-bunk cabinet (the upper mattress runs to the foot wall)."""
+        return self.nook_width - (self.mattress_length + 2 * self.mattress_clearance) - self.T
+
+    @property
+    def cab_top(self):
+        """Top of the cabinet sides and the head liner; the lid sits on them, flush with the rail."""
+        return self.rail_top - self.T
+
+    @property
     def entry_x0(self):
         return self.tower_x0 + self.T + self.entry_post
 
@@ -115,7 +128,7 @@ def front_wall(p: BunkParams):
 
     # entry gap in the rail over the tower: open to the foot wall, rounded rail end
     ex0 = p.entry_x0
-    cut = round_convex(rect(ex0, p.deck_top, L + 10, H + 10), p.sill_fillet)
+    cut = round_convex(rect(ex0, p.deck_under, L + 10, H + 10), p.sill_fillet)
     panel = panel.difference(cut)
     zone = rect(ex0 - 4, p.deck_top + 0.01, ex0 + 1, H + 1)
     panel = unary_union([panel.difference(zone), round_convex(panel, p.gap_corner_radius).intersection(zone)])
@@ -146,7 +159,7 @@ def front_wall(p: BunkParams):
 
     # guard-rail band above the deck: slots (<= 3.5" openings) or small ferns
     y0, y1 = p.deck_top + 1.0, H - p.top_rail
-    spans = [(p.T, p.joint_x), (p.joint_x, p.entry_x0)]
+    spans = [(p.cab_side_x + p.T, p.joint_x), (p.joint_x, p.entry_x0)]
     for s0, s1 in spans:
         if p.upper_cutouts == "ferns":
             holes += fronds_between(s0, s1, p.deck_top + 0.6, H - 1.0, 8.75, 4.25, margin=1.6,
@@ -171,10 +184,7 @@ def end_and_tower(p: BunkParams):
     U = gd + D  # side-local depth, front tongue included
     parts = []
 
-    liner = Part("Head wall liner", rect(0, 0, U, p.rail_top), color=WOOD_DARK,
-                 note="screw to the head-wall studs; front edge in the panel rabbet")
-    liner.placements.append(place((0, T - gd, 0), Y, Z, (1, 0, 0)))
-    parts.append(liner)
+    parts += cabinet(p)
 
     # shelves: tabs through dog-boned slots in both tower sides
     tx0, tx1 = p.tower_in
@@ -215,32 +225,78 @@ def end_and_tower(p: BunkParams):
     return parts
 
 
+def cabinet(p: BunkParams, open_lid_deg=0.0):
+    """Head-wall liner plus the lidded cabinet on the top bunk at the head end.
+
+    The liner is the cabinet's wall side; the mattress-side panel stands on the deck in a
+    groove in the front wall; the back has tabs through both. The one-piece lid is
+    piano-hinged along the head wall and opens toward the mattress, like the floor bed.
+    """
+    T, D, gd, c, tl = p.T, p.depth, p.groove_depth, p.tab_clearance, 3.0
+    U = gd + D
+    z0, z1 = p.deck_top, p.cab_top
+    h = z1 - z0
+    yb0 = T + D - p.back_inset - T              # front face of the cabinet back
+    ub = yb0 - (T - gd)                         # same, in side-local depth
+    tabs = tab_centres(h, tl)
+    slots = unary_union([slot_with_dogbones(ub - c, z0 + t - tl / 2 - c, ub + T + c, z0 + t + tl / 2 + c,
+                                            p.bit_diameter) for t in tabs])
+
+    liner = Part("Head wall liner", rect(0, 0, U, z1).difference(slots), color=WOOD_DARK,
+                 note="screw to the head-wall studs; lower bunk's head end and the cabinet's wall side")
+    liner.placements.append(place((0, T - gd, 0), Y, Z, (1, 0, 0)))
+
+    side_slots = affinity.translate(slots, 0, -z0)
+    nw, nd = p.hand_notch
+    mid = gd + D / 2
+    side = rect(0, 0, U, h).difference(side_slots)
+    side = side.difference(round_convex(rect(mid - nw / 2, h - nd, mid + nw / 2, h + 5), min(nw / 2, nd) * 0.9))
+    zone = rect(mid - nw / 2 - 1, h - nd - 1, mid + nw / 2 + 1, h + 1)
+    side = unary_union([side.difference(zone), round_convex(side, 0.375).intersection(zone)])
+    cside = Part("Cabinet side", side, note="faces the upper mattress; hand cut-out to lift the lid")
+    cside.placements.append(place((p.cab_side_x, T - gd, z0), Y, Z, (1, 0, 0)))
+
+    iw = p.cab_side_x - T
+    back = Part("Cabinet back", unary_union([rect(0, 0, iw, h)] +
+                                            [rect(-T, t - tl / 2, 0, t + tl / 2) for t in tabs] +
+                                            [rect(iw, t - tl / 2, iw + T, t + tl / 2) for t in tabs]),
+                color=WOOD_DARK, note="tabs through the liner and the cabinet side")
+    back.placements.append(place((T, yb0 + T, z0), X, Z, NY))
+    _shift_to_origin(back)
+
+    g = p.lid_gap
+    lw = p.cab_side_x + T
+    lid = Part("Cabinet lid", rect(0, 0, lw, D - 2 * g), color="#ead9b6",
+               note="piano hinge along the head-wall edge; flush with the rail top")
+    if open_lid_deg:
+        th = np.radians(open_lid_deg)
+        u = np.array([np.cos(th), 0, np.sin(th)])
+        nrm = np.array([-np.sin(th), 0, np.cos(th)])
+        origin = np.array([0, T + g, z1 + T]) - T * nrm
+        lid.placements.append(place(origin, tuple(u), Y, tuple(nrm)))
+    else:
+        lid.placements.append(place((0, T + g, z1), X, Y, (0, 0, 1)))
+    return [liner, cside, back, lid]
+
+
 def deck_parts(p: BunkParams):
     T, D, L = p.T, p.depth, p.nook_width
-    lh, zu, zt = p.ledger_height, p.deck_under, p.deck_top
-    x0, x1 = T, L - T
+    lh, zu = p.ledger_height, p.deck_under
+    x0, x1 = T, L
     parts = []
-
-    # mattress stop on the deck over the tower side, tabs through the deck
-    stop_tabs = tab_centres(D, 3.0)
-    stop = Part("Mattress stop", unary_union([rect(0, 0, D, p.stop_height)] +
-                                             [rect(u - 1.5, -T, u + 1.5, 0) for u in stop_tabs]),
-                note="keeps the upper mattress off the landing")
-    stop.placements.append(place((p.tower_x0, T, zt), Y, Z, (1, 0, 0)))
-    _shift_to_origin(stop)
-    mortises = [slot_with_dogbones(p.tower_x0 - p.tab_clearance, T + u - 1.5 - p.tab_clearance,
-                                   p.tower_x0 + T + p.tab_clearance, T + u + 1.5 + p.tab_clearance,
-                                   p.bit_diameter) for u in stop_tabs]
+    # the foot-end deck piece runs out through the climb-in gap as the top step
+    tread = round_convex(rect(p.entry_x0 + p.sill_fillet + 0.06, -p.tread_depth, L + 3, T), 1.0).intersection(
+        rect(0, -p.tread_depth - 1, L - 0.06, T + 1))
 
     # deck: equal pieces, each seam over a batten
     n = p.deck_pieces
     joints = [x0 + (x1 - x0) * k / n for k in range(1, n)]
     edges = [x0] + joints + [x1]
-    mz1 = p.tower_x0 - 1.5
+    mz0, mz1 = p.cab_side_x + T + 2.5, L - 3.0
     vents = []
     for a, b in zip(edges[:-1], edges[1:]):
-        lo, hi = a + (3.5 if a > x0 else 2.5), min(b - 3.5, mz1)
-        k = max(1, int((hi - lo) // 4.5) + 1) if hi > lo else 0
+        lo, hi = max(a + 3.5, mz0), min(b - 3.5, mz1)
+        k = max(1, int((hi - lo) // 4.5) + 1) if hi - lo > 1 else 0
         for i in range(k):
             cx = lo + (hi - lo) * (i + 0.5) / k if k > 1 else (lo + hi) / 2
             for cy in (T + 7.0, T + D / 2, T + D - 7.0):
@@ -250,7 +306,9 @@ def deck_parts(p: BunkParams):
     deck = Part("Deck piece", rect(0, 0, w0, D), note="upper mattress platform; screw down into ledgers")
     shapes = []
     for i, (a, b) in enumerate(zip(edges[:-1], edges[1:])):
-        s = rect(a, T, b, T + D).difference(vents).difference(unary_union(mortises))
+        s = rect(a, T, b, T + D).difference(vents)
+        if b >= L:
+            s = unary_union([s, tread.intersection(rect(a, -10, b, T + 1))])
         shapes.append(affinity.translate(s, -a, -T))
         deck.placements.append(place((a, T, zu), X, Y, (0, 0, 1)))
     # pieces differ only in their holes; keep them separate parts when they differ
@@ -259,10 +317,11 @@ def deck_parts(p: BunkParams):
         parts.append(deck)
     else:
         for i, (sh, pl) in enumerate(zip(shapes, deck.placements)):
-            part = Part(f"Deck {chr(65 + i)}", sh, note=deck.note)
+            part = Part(f"Deck {chr(65 + i)}", sh, note=deck.note if i < n - 1 else
+                        "foot end; its tread sticks out through the climb-in gap as the top step")
             part.placements.append(pl)
+            _shift_to_origin(part)
             parts.append(part)
-    parts.append(stop)
 
     batten = Part("Deck seam batten", rect(0, 0, 5.0, D - 2 * T), color=WOOD_DARK,
                   note="glue + screw under each deck seam, between the ledgers")
@@ -298,7 +357,9 @@ def add_front_joinery(p: BunkParams, panels):
     """Rabbet for the head liner, dog-boned grooves for the two tower sides,
     all pocketed into the back of the front wall."""
     T, c = p.T, p.tab_clearance
-    grooves = [rect(-1, -1, T + c, p.rail_top + 1),
+    grooves = [rect(-1, -1, T + c, p.cab_top + c),
+               slot_with_dogbones(p.cab_side_x - c, p.deck_top - c, p.cab_side_x + T + c, p.cab_top + c,
+                                  p.bit_diameter),
                slot_with_dogbones(p.tower_x0 - c, -2, p.tower_x0 + T + c, p.deck_under + c, p.bit_diameter),
                rect(p.nook_width - T - c, -2, p.nook_width + 1, p.deck_under + c)]
     for panel in panels:
@@ -311,9 +372,9 @@ def add_front_joinery(p: BunkParams, panels):
 
 def mattresses(p: BunkParams):
     out = []
-    for name, z in (("Lower mattress", 0.0), ("Upper mattress", p.deck_top)):
+    for name, x, z in (("Lower mattress", p.T, 0.0), ("Upper mattress", p.cab_side_x + p.T, p.deck_top)):
         m = Part(name, rect(0, 0, p.mattress_length, p.mattress_width), material="other", color="#f4f1ea")
-        m.placements.append(place((p.T + p.mattress_clearance, p.T + p.mattress_clearance / 2, z), X, Y, Z))
+        m.placements.append(place((x + p.mattress_clearance, p.T + p.mattress_clearance / 2, z), X, Y, Z))
         m.render_thickness = p.mattress_thickness
         out.append(m)
     return out
@@ -321,12 +382,13 @@ def mattresses(p: BunkParams):
 
 def treehouse_bunk(p: BunkParams, key="bunk_treehouse", title="Treehouse bunk",
                    summary="Fresh bunk design: an enclosed treehouse lower bunk with an arched door and "
-                           "windows, the upper bunk on a deck above it, and a built-in climb up the foot tower."):
+                           "windows, the upper bunk on a deck above it with a lidded cabinet at the head, and a "
+                           "built-in climb up the foot tower that lands on the upper mattress."):
     pa, pb = front_wall(p)
     add_front_joinery(p, [pa, pb])
     v = Variant(key, title, summary, p)
     v.parts = [pa, pb] + end_and_tower(p) + deck_parts(p) + mattresses(p)
-    v.open_parts = v.parts
+    v.open_parts = [q if q.name != "Cabinet lid" else cabinet(p, open_lid_deg=88)[-1] for q in v.parts]
     ex0 = p.entry_x0
     v.heights = dict(lower_mattress_top=p.mattress_thickness, deck_under=p.deck_under, deck_top=p.deck_top,
                      upper_mattress_top=p.deck_top + p.mattress_thickness, rail_top=p.rail_top,
